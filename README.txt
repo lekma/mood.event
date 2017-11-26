@@ -1,5 +1,4 @@
 mood.event
-==========
 
 Python libev interface
 
@@ -13,9 +12,4 @@ You register interest in certain events by registering so-called event watchers,
 which you initialise with the details of the event, and then hand over to libev
 by starting the watcher.
 
-See `mood.event documentation <https://mood.readthedocs.io/projects/event/>`_
-for more info.
-
-
------
-
+See https://mood.readthedocs.io/projects/event/ for more info.
