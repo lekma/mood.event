@@ -228,7 +228,6 @@ __Watcher_New(PyTypeObject *type, int ev_type, size_t size)
         __Watcher_CheckPending(W, m, -1); \
     } while (0)
 
-
 #define __Watcher_CheckCallback(W, cb, r) \
     do { \
         if ((W)->ev_type == EV_EMBED) { \
