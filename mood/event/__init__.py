@@ -23,3 +23,6 @@
 from ._ev import *
 del _ev
 
+from ._loop import *
+del _loop
+
