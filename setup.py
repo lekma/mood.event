@@ -83,7 +83,7 @@ setup(
 
       ext_package=pkg_name,
       ext_modules=[
-                   Extension("_ev", ["src/helpers/helpers.c", "src/_ev.c"],
+                   Extension("_ev", ["src/_ev.c"],
                              define_macros=[PKG_VERSION],
                              libraries=[libev_name])
       ],

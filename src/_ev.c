@@ -23,7 +23,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
-#include "helpers/helpers.h"
+#include "helpers/helpers.c"
 
 #include <ev.h>
 
