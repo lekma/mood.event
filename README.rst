@@ -28,3 +28,6 @@ It also is quite `fast <http://libev.schmorp.de/bench.html>`_.
 `libev <http://software.schmorp.de/pkg/libev.html>`_ is written and maintained
 by Marc Lehmann.
 
+**Note:** The following documentation is largely adapted from `libev's
+documentation <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod>`_.
+

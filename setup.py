@@ -66,7 +66,8 @@ setup(
       name=pkg_name,
       version=pkg_version,
       description=pkg_desc,
-      long_description=open(abspath("README.rst"), encoding="utf-8").read(),
+      long_description=open(abspath("README.txt"), encoding="utf-8").read(),
+      long_description_content_type="text",
 
       url="https://github.com/lekma/mood.event",
       author="Malek Hadj-Ali",

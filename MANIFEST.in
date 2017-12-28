@@ -1,2 +1,3 @@
-include LICENSE.txt
+include *.txt
+exclude *.rst
 recursive-include src *
