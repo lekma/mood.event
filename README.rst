@@ -54,6 +54,8 @@ default_loop([flags=EVFLAG_AUTO, callback=None, data=None, io_interval=0.0, time
   **Note:** If you don't know what loop to use, use the one returned from this
   function.
 
+.. _@fatal:
+
 @fatal
   A decorator indicating unhandled exceptions are fatal to the loop. A
   callback using this decorator will stop the loop when an unhandled exception
@@ -103,21 +105,34 @@ embeddable_backends() -> int
   Returns the set of `backends`_ that are embeddable in other event loops. This
   value is platform-specific but can include backends not available on the
   current system. To find which embeddable backends might be supported on the
-  current system, you would need to look at::
+  current system, you would need to look at:
 
-    embeddable_backends() & supported_backends()
+  .. code:: python
 
-  likewise for recommended ones::
+      embeddable_backends() & supported_backends()
 
-    embeddable_backends() & recommended_backends()
+  likewise for recommended ones:
+
+  .. code:: python
+
+      embeddable_backends() & recommended_backends()
 
   See `Embed`_ watchers for more information about embedding loops.
 
+.. _feed_signal():
+
 feed_signal(signum)
   * signum (int)
-      TODO.
+      signal number to feed libev.
 
-  This function can be used to "simulate" a signal receive.
+  This function can be used to "simulate" a signal receive. It is completely
+  safe to call this function at any time, from any context, including signal
+  handlers or random threads. Its main use is to customise signal handling in
+  your process, especially in the presence of threads.
+
+  For example, you could ignore signals by default in all threads (and specify
+  `EVFLAG_NOSIGMASK`_ when creating any loops), and in one thread, wait for
+  signals, then "deliver" them to libev by calling `feed_signal()`_.
 
 __version__
   mood.event's version.
@@ -464,6 +479,8 @@ Loop([flags=EVFLAG_AUTO, callback=None, data=None, io_interval=0.0, timeout_inte
     interested in handling them.
     ``signalfd`` will not be used by default as this changes your signal mask.
 
+.. _EVFLAG_NOSIGMASK:
+
 * EVFLAG_NOSIGMASK
     When this flag is specified, then libev will avoid modifying the signal
     mask. Specifically, this means you have to make sure signals are unblocked
@@ -593,9 +610,11 @@ backends
 
 * EVBACKEND_ALL
     Try all backends (even potentially broken ones that wouldn't be tried with
-    `EVFLAG_AUTO`_). Since this is a mask, you can do stuff such as::
+    `EVFLAG_AUTO`_). Since this is a mask, you can do stuff such as:
 
-      EVBACKEND_ALL & ~EVBACKEND_KQUEUE
+    .. code:: python
+
+        EVBACKEND_ALL & ~EVBACKEND_KQUEUE
 
     It is definitely not recommended to use this flag, use whatever
     `recommended_backends()`_ returns, or simply do not specify a backend at all.
@@ -653,47 +672,200 @@ Watchers
 
 TODO.
 
+**See also:** `ANATOMY OF A WATCHER
+<http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#ANATOMY_OF_A_WATCHER>`_
+
 start()
-  TODO.
+  Starts (activates) the watcher. Only active watchers will receive events. If
+  the watcher is already active nothing will happen.
+
+.. _Watcher.stop():
 
 stop()
-  TODO.
+  Stops the watcher if active, and clears the pending status (whether the
+  watcher was active or not).
+  It is possible that stopped watchers are pending - for example, non-repeating
+  timers are being stopped when they become pending - but calling
+  `Watcher.stop()`_ ensures that the watcher is neither active nor pending.
 
 invoke(revents)
   * revents (int)
-      TODO.
+      See `events`_ for valid values.
 
-  TODO.
+  Invoke the watcher callback with the given *revents*.
 
 clear() -> int
-  TODO.
+  If the watcher is pending, this method clears its pending status and returns
+  its *revents* bitset (as if its callback was invoked). If the watcher isn't
+  pending it does nothing and returns ``0``.
+  Sometimes it can be useful to "poll" a watcher instead of waiting for its
+  callback to be invoked, which can be accomplished with this method.
+
+.. _Watcher.feed():
 
 feed(revents)
   * revents (int)
-      TODO.
+      See `events`_ for valid values.
 
-  TODO.
+  Feeds the given *revents* set into the event loop, as if the specified event
+  had happened for the watcher.
 
 .. _Watcher.loop:
 
 loop (read only)
-  TODO.
+  `Loop`_ object responsible for the watcher.
 
 callback
-  TODO.
+  The current watcher callback, its signature must be:
+
+  callback(watcher, revents)
+    * watcher (Watcher type)
+        this watcher.
+
+    * revents (int)
+        See `events`_ for valid values.
+
+  As a rule you should not let a callback return with unhandled exceptions. The
+  loop "does not know" how to correctly handle an exception happening in **your**
+  callback (it depends largely on what **you** are doing), so, by default, it
+  will just print a warning and suppress it.
+  If you want to act on an exception, you're better off doing it in the callback
+  (where you are allowed to do anything needed, like logging, stopping,
+  restarting the loop, etc.). Example:
+
+  .. code:: python
+
+      def mycallback(watcher, revents):
+          try:
+              pass # do something interesting
+          except Exception as err:
+              logging.exception("FATAL!") # this will also log the traceback
+              watcher.stop() # stop the watcher
+              watcher.loop.stop() # stop the loop
+              raise err # and finally raise err
+
+  If you have a lot of callbacks, use decorators:
+
+  .. code:: python
+
+      def mydecorator(func):
+          def wrap(watcher, revents):
+              try:
+                  func(watcher, revents)
+              except RuntimeError: # these are not fatal
+                  logging.exception("stopping {0}".format(watcher))
+                  watcher.stop() # stop the watcher but let the loop continue on its merry way
+              except Exception as err: # all other exceptions are fatal
+                  logging.exception("FATAL: stopping {0} and {1}".format(watcher, watcher.loop))
+                  watcher.stop() # stop the watcher
+                  watcher.loop.stop() # stop the loop
+                  raise err # and finally raise err
+          return wrap
+
+      @mydecorator
+      def mycallback(watcher, revents):
+          pass #do something interesting
+
+  **Note:** As a convenience mood.event provides a `@fatal`_ decorator. If a
+  callback decorated with `@fatal`_ raises an exception the loop is stopped and
+  the exception raised. Contrast:
+
+  .. code:: python
+
+      >>> from signal import SIGINT
+      >>> from mood.event import Loop, EV_TIMER, EV_SIGNAL
+      >>>
+      >>> def mycallback(watcher, revents):
+      ...     if (revents & EV_TIMER):
+      ...         raise Exception("TEST")
+      ...     elif (revents & EV_SIGNAL):
+      ...         watcher.loop.stop()
+      ...
+      >>>
+      >>> loop = Loop()
+      >>> timer = loop.timer(0, 2, mycallback)
+      >>> timer.start()
+      >>> sig = loop.signal(SIGINT, mycallback)
+      >>> sig.start()
+      >>> loop.start()
+      Exception ignored in: <function mycallback at 0x7f4a4b057f28>
+      Traceback (most recent call last):
+        File "<stdin>", line 3, in mycallback
+      Exception: TEST
+      Exception ignored in: <function mycallback at 0x7f4a4b057f28>
+      Traceback (most recent call last):
+        File "<stdin>", line 3, in mycallback
+      Exception: TEST
+      Exception ignored in: <function mycallback at 0x7f4a4b057f28>
+      Traceback (most recent call last):
+        File "<stdin>", line 3, in mycallback
+      Exception: TEST
+      ^CTrue
+      >>>
+
+  versus:
+
+  .. code:: python
+
+      >>> from signal import SIGINT
+      >>> from mood.event import Loop, EV_TIMER, EV_SIGNAL, fatal
+      >>>
+      >>> @fatal
+      ... def mycallback(watcher, revents):
+      ...     if (revents & EV_TIMER):
+      ...         raise Exception("TEST")
+      ...     elif (revents & EV_SIGNAL):
+      ...         watcher.loop.stop()
+      ...
+      >>>
+      >>> loop = Loop()
+      >>> timer = loop.timer(0, 2, mycallback)
+      >>> timer.start()
+      >>> sig = loop.signal(SIGINT, mycallback)
+      >>> sig.start()
+      >>> loop.start()
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File "<stdin>", line 4, in mycallback
+      Exception: TEST
+      >>>
 
 data
-  TODO.
+  watcher data.
 
 priority
-  TODO.
+  Set and query the priority of the watcher. The priority is a small integer
+  between `EV_MINPRI`_ and `EV_MAXPRI`_. Pending watchers with higher priority
+  will be invoked before watchers with lower priority, but priority will not
+  keep watchers from being executed. If you need to suppress invocation when
+  higher priority events are pending you need to look at `Idle`_ watchers, which
+  provide this functionality.
+
+  Setting a priority outside the range of `EV_MINPRI`_ to `EV_MAXPRI`_ is fine,
+  as long as you do not mind that the priority value you query might or might
+  not have been clamped to the valid range.
+
+  The default priority used by watchers when no priority has been set is always
+  ``0``.
+
+  **Note:** You must not change the priority of a watcher as long as it is
+  active or pending.
+
+  **See also:** `WATCHER PRIORITY MODELS
+  <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#WATCHER_PRIORITY_MODELS>`_
 
 active (read only)
-  TODO.
+  ``True`` if the watcher is active (i.e. it has been started and
+  not yet been stopped), ``False`` otherwise.
+
+  **Note:** As long as a watcher is active you must not modify it.
 
 pending (read only)
-  TODO.
+  ``True`` if the watcher is pending (i.e. it has outstanding events but its
+  callback has not yet been invoked), ``False`` otherwise.
 
+  **Note:** As long as a watcher is pending (but not active) you must not change
+  its priority.
 
 events
 ^^^^^^
@@ -701,59 +873,79 @@ events
 .. _EV_READ:
 
 * EV_IO/EV_READ
-    TODO.
+    The file descriptor in the `Io`_ watcher has become readable.
 
 .. _EV_WRITE:
 
 * EV_WRITE
-    TODO.
+    The file descriptor in the `Io`_ watcher has become writable.
 
 * EV_TIMER
-    TODO.
+    The `Timer`_ watcher has timed out.
 
 * EV_PERIODIC
-    TODO.
+    The `Periodic`_ watcher has timed out.
 
 * EV_SIGNAL
-    TODO.
+    The signal specified in the `Signal`_ watcher has been received by a thread.
 
 * EV_CHILD
-    TODO.
+    The pid specified in the `Child`_ watcher has received a status change.
 
 * EV_IDLE
-    TODO.
+    The `Idle`_ watcher has determined that you have nothing better to do.
 
 * EV_PREPARE/EV_CHECK
-    TODO.
+    All `Prepare`_ watchers are invoked just before the loop starts to gather
+    new events, and all `Check`_ watchers are queued (not invoked) just after
+    the loop has gathered them, but before it queues any callbacks for any
+    received events. That means `Prepare`_ watchers are the last watchers
+    invoked before the event loop sleeps or polls for new events, and `Check`_
+    watchers will be invoked before any other watchers of the same or lower
+    priority within an event loop iteration.
+    Callbacks of both watcher types can start and stop as many watchers as they
+    want, and all of them will be taken into account (for example, a `Prepare`_
+    watcher might start an `Idle`_ watcher to keep the loop from blocking).
 
 * EV_EMBED
-    TODO.
+    The embedded event loop specified in the `Embed`_ watcher needs attention.
 
 * EV_FORK
-    TODO.
+    The event loop has been resumed in the child process after fork (see `Fork`_).
 
 * EV_ASYNC
-    TODO.
+    The given `Async`_ watcher has been asynchronously notified.
 
 * EV_CUSTOM
-    TODO.
+    Not ever sent (or otherwise used) by libev itself, but can be freely used by
+    users to signal watchers (e.g. via `Watcher.feed()`_).
 
 * EV_ERROR
-    TODO.
+    An unspecified error has occurred, the watcher has been stopped. This might
+    happen because the watcher could not be properly started because libev ran
+    out of memory, a file descriptor was found to be closed or any other problem.
 
+    **Warning:** mood.event handle this event as a fatal error. On receiving
+    this event the loop and the watcher **will be stopped** (the callback **will
+    not be invoked**). In practice, users should never receive this event (still
+    present for testing puposes).
 
 priorities
 ^^^^^^^^^^
 
+.. _EV_MINPRI:
+
 * EV_MINPRI
-    TODO.
+    default: ``-2``.
+
+.. _EV_MAXPRI:
 
 * EV_MAXPRI
-    TODO.
+    default: ``2``.
 
 
 Io
-^^
+--
 
 Io(fd, events, loop, callback[, data=None, priority=0])
   * fd (int or object)
@@ -793,7 +985,7 @@ Io(fd, events, loop, callback[, data=None, priority=0])
 
 
 Timer
-^^^^^
+-----
 
 Timer(after, repeat, loop, callback[, data=None, priority=0])
   * after (float)
@@ -836,7 +1028,7 @@ Timer(after, repeat, loop, callback[, data=None, priority=0])
 
 
 Periodic
-^^^^^^^^
+--------
 
 Periodic(offset, interval, loop, callback[, data=None, priority=0])
   * offset (float)
@@ -882,7 +1074,7 @@ Periodic(offset, interval, loop, callback[, data=None, priority=0])
 
 
 Scheduler
-^^^^^^^^^
+---------
 
 Scheduler(scheduler, loop[, callback=None, data=None, priority=0])
   * scheduler (callable)
@@ -913,7 +1105,7 @@ Scheduler(scheduler, loop[, callback=None, data=None, priority=0])
 
 
 Signal
-^^^^^^
+------
 
 Signal(signum, loop, callback[, data=None, priority=0])
   * signum (int)
@@ -944,7 +1136,7 @@ Signal(signum, loop, callback[, data=None, priority=0])
 
 
 Child
-^^^^^^
+-----
 
 Child(pid, trace, loop, callback[, data=None, priority=0])
   * pid (int)
@@ -987,7 +1179,7 @@ Child(pid, trace, loop, callback[, data=None, priority=0])
 
 
 Idle
-^^^^^^
+----
 
 Idle(loop, callback[, data=None, priority=0])
   * loop (`Loop`_)
@@ -1006,7 +1198,7 @@ Idle(loop, callback[, data=None, priority=0])
 
 
 Prepare/Check
-^^^^^^^^^^^^^
+-------------
 
 Prepare(loop, callback[, data=None, priority=0])
   .. ..
@@ -1032,7 +1224,7 @@ Check(loop, callback[, data=None, priority=0])
 
 
 Embed
-^^^^^
+-----
 
 Embed(other, loop[, callback=None, data=None, priority=0])
   * other (`Loop`_)
@@ -1069,7 +1261,7 @@ Embed(other, loop[, callback=None, data=None, priority=0])
 
 
 Fork
-^^^^
+----
 
 Fork(loop, callback[, data=None, priority=0])
   * loop (`Loop`_)
@@ -1088,7 +1280,7 @@ Fork(loop, callback[, data=None, priority=0])
 
 
 Async
-^^^^^
+-----
 
 Async(loop, callback[, data=None, priority=0])
   * loop (`Loop`_)
