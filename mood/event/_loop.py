@@ -26,7 +26,7 @@ from signal import pthread_sigmask, SIG_BLOCK, SIG_UNBLOCK, NSIG, SIGTERM, SIGIN
 from collections import deque
 from abc import ABCMeta, abstractmethod
 
-from . import default_loop, Loop, EVFLAG_NOSIGMASK, EV_MAXPRI
+from . import default_loop, Loop, EVFLAG_AUTO, EVFLAG_NOSIGMASK, EV_MAXPRI
 
 
 __all__ = ["ServerLoop", "ClientLoop", "ParentLoop", "ChildLoop"]
@@ -38,8 +38,8 @@ __all__ = ["ServerLoop", "ClientLoop", "ParentLoop", "ChildLoop"]
 
 class _BaseLoop(metaclass=ABCMeta):
 
-    def __init__(self, logger):
-        self._loop = self._LoopCtor(flags=EVFLAG_NOSIGMASK)
+    def __init__(self, logger, flags=EVFLAG_AUTO):
+        self._loop = self._LoopCtor(flags=(flags | EVFLAG_NOSIGMASK))
         self._logger = logger
         self._watchers = deque()
         self._stopping = False
