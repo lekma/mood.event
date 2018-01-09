@@ -492,7 +492,7 @@ Loop([flags=EVFLAG_AUTO, callback=None, data=None, io_interval=0.0, timeout_inte
     ``sigprocmask``, whose behaviour is officially unspecified.
     This flag's behaviour will become the default in future versions of libev.
 
-backends
+Backends
 ++++++++
 
 .. _EVBACKEND_SELECT:
@@ -630,50 +630,54 @@ Watcher methods
 The following methods are just a convenient way to instantiate watchers attached
 to the loop (although they do not take keyword arguments).
 
-Loop.io(fd, events, callback[, data, priority])
+io(fd, events, callback[, data, priority])
   Returns an `Io`_ watcher.
 
-Loop.timer(after, repeat, callback[, data, priority])
+timer(after, repeat, callback[, data, priority])
   Returns a `Timer`_ watcher.
 
-Loop.periodic(offset, interval, callback[, data, priority])
+periodic(offset, interval, callback[, data, priority])
   Returns a `Periodic`_ watcher.
 
-Loop.scheduler(scheduler, callback[, data, priority])
+scheduler(scheduler, callback[, data, priority])
   Returns a `Scheduler`_ watcher.
 
-Loop.signal(signum, callback[, data, priority])
+signal(signum, callback[, data, priority])
   Returns a `Signal`_ watcher.
 
-Loop.child(pid, trace, callback[, data, priority])
+child(pid, trace, callback[, data, priority])
   Returns a `Child`_ watcher.
 
-Loop.idle(callback[, data, priority])
+idle(callback[, data, priority])
   Returns an `Idle`_ watcher.
 
-Loop.prepare(callback[, data, priority])
+prepare(callback[, data, priority])
   Returns a `Prepare`_ watcher.
 
-Loop.check(callback[, data, priority])
+check(callback[, data, priority])
   Returns a `Check`_ watcher.
 
-Loop.embed(other[, callback, data, priority])
+embed(other[, callback, data, priority])
   Returns an `Embed`_ watcher.
 
-Loop.fork(callback[, data, priority])
+fork(callback[, data, priority])
   Returns a `Fork`_ watcher.
 
-Loop.async(callback[, data, priority])
+async(callback[, data, priority])
   Returns an `Async`_ watcher.
 
 
 Watchers
 --------
 
-TODO.
-
 **See also:** `ANATOMY OF A WATCHER
 <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#ANATOMY_OF_A_WATCHER>`_
+
+
+Common methods and attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. _Watcher.start():
 
 start()
   Starts (activates) the watcher. Only active watchers will receive events. If
@@ -690,7 +694,7 @@ stop()
 
 invoke(revents)
   * revents (int)
-      See `events`_ for valid values.
+      See `Events received`_ for valid values.
 
   Invoke the watcher callback with the given *revents*.
 
@@ -705,7 +709,7 @@ clear() -> int
 
 feed(revents)
   * revents (int)
-      See `events`_ for valid values.
+      See `Events received`_ for valid values.
 
   Feeds the given *revents* set into the event loop, as if the specified event
   had happened for the watcher.
@@ -715,15 +719,17 @@ feed(revents)
 loop (read only)
   `Loop`_ object responsible for the watcher.
 
+.. _Watcher.callback:
+
 callback
   The current watcher callback, its signature must be:
 
   callback(watcher, revents)
-    * watcher (Watcher type)
+    * watcher (one of `Watcher types`_)
         this watcher.
 
     * revents (int)
-        See `events`_ for valid values.
+        See `Events received`_ for valid values.
 
   As a rule you should not let a callback return with unhandled exceptions. The
   loop "does not know" how to correctly handle an exception happening in **your**
@@ -739,7 +745,6 @@ callback
           try:
               pass # do something interesting
           except Exception as err:
-              logging.exception("FATAL!") # this will also log the traceback
               watcher.stop() # stop the watcher
               watcher.loop.stop() # stop the loop
               raise err # and finally raise err
@@ -748,15 +753,16 @@ callback
 
   .. code:: python
 
+      import logging
+
       def mydecorator(func):
           def wrap(watcher, revents):
               try:
                   func(watcher, revents)
               except RuntimeError: # these are not fatal
-                  logging.exception("stopping {0}".format(watcher))
+                  logging.exception("stopping {0}".format(watcher)) # this will also log the traceback
                   watcher.stop() # stop the watcher but let the loop continue on its merry way
               except Exception as err: # all other exceptions are fatal
-                  logging.exception("FATAL: stopping {0} and {1}".format(watcher, watcher.loop))
                   watcher.stop() # stop the watcher
                   watcher.loop.stop() # stop the loop
                   raise err # and finally raise err
@@ -785,7 +791,7 @@ callback
       >>> loop = Loop()
       >>> timer = loop.timer(0, 2, mycallback)
       >>> timer.start()
-      >>> sig = loop.signal(SIGINT, mycallback)
+      >>> sig = loop.signal(SIGINT, mycallback) # will catch KeyboardInterrupt
       >>> sig.start()
       >>> loop.start()
       Exception ignored in: <function mycallback at 0x7f4a4b057f28>
@@ -807,31 +813,29 @@ callback
 
   .. code:: python
 
-      >>> from signal import SIGINT
-      >>> from mood.event import Loop, EV_TIMER, EV_SIGNAL, fatal
+      >>> from mood.event import Loop, fatal
       >>>
       >>> @fatal
       ... def mycallback(watcher, revents):
-      ...     if (revents & EV_TIMER):
-      ...         raise Exception("TEST")
-      ...     elif (revents & EV_SIGNAL):
-      ...         watcher.loop.stop()
+      ...     raise Exception("TEST")
       ...
       >>>
       >>> loop = Loop()
       >>> timer = loop.timer(0, 2, mycallback)
       >>> timer.start()
-      >>> sig = loop.signal(SIGINT, mycallback)
-      >>> sig.start()
       >>> loop.start()
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
-        File "<stdin>", line 4, in mycallback
+        File "<stdin>", line 3, in mycallback
       Exception: TEST
       >>>
 
+.. _Watcher.data:
+
 data
   watcher data.
+
+.. _Watcher.priority:
 
 priority
   Set and query the priority of the watcher. The priority is a small integer
@@ -867,8 +871,9 @@ pending (read only)
   **Note:** As long as a watcher is pending (but not active) you must not change
   its priority.
 
-events
-^^^^^^
+
+Events received
+^^^^^^^^^^^^^^^
 
 .. _EV_READ:
 
@@ -930,7 +935,8 @@ events
     not be invoked**). In practice, users should never receive this event (still
     present for testing puposes).
 
-priorities
+
+Priorities
 ^^^^^^^^^^
 
 .. _EV_MINPRI:
@@ -944,36 +950,86 @@ priorities
     default: ``2``.
 
 
+Watcher types
+^^^^^^^^^^^^^
+
+mood.event implements the following watcher types:
+
+
 Io
---
+++
 
 Io(fd, events, loop, callback[, data=None, priority=0])
   * fd (int or object)
-      TODO.
+      The file descriptor to be monitored, can be an int or any Python object
+      having a ``fileno`` method.
 
   * events (int)
-      TODO.
+      Either ``EV_READ``, ``EV_WRITE`` or ``EV_READ | EV_WRITE``.
 
   * loop (`Loop`_)
-      TODO.
+      Loop object responsible for this watcher (accessible through
+      `Watcher.loop`_).
 
   * callback (callable)
-      TODO.
+      See `Watcher.callback`_.
 
   * data (object)
-      TODO.
+      Any Python object you might want to attach to the watcher (stored in
+      `Watcher.data`_).
 
   * priority (int)
-      TODO.
+      See `Watcher.priority`_.
 
-  TODO.
+  `Io`_ watchers check whether a file descriptor is readable or writable in each
+  iteration of the event loop, or, more precisely, when reading would not block
+  the process and writing would at least be able to write some data. This
+  behaviour is called level-triggering because you keep receiving events as long
+  as the condition persists. Remember you can stop the watcher if you don't want
+  to act on the event and neither want to receive future events.
+
+  In general you can register as many read and/or write event watchers per fd as
+  you want. Setting all file descriptors to non-blocking mode is also usually a
+  good idea (but not required).
+
+  Another thing you have to watch out for is that it is quite easy to receive
+  "spurious" readiness notifications, that is, your callback might be called
+  with `EV_READ`_ but a subsequent ``read`` will actually block because there is
+  no data. It is very easy to get into this situation even with a relatively
+  standard program structure. Thus it is best to always use non-blocking I/O: an
+  extra ``read`` returning ``EAGAIN`` is far preferable to a program hanging
+  until some data arrives.
+
+  If you cannot run the fd in non-blocking mode, then you have to separately
+  re-test whether a file descriptor is really ready with a known-to-be good
+  interface such as ``poll``. Some people additionally use ``SIGALRM`` and an
+  interval timer, just to be sure you won't block indefinitely.
+
+  But really, best use non-blocking mode.
+
+  **See also:** `ev_io - is this file descriptor readable or writable?
+  <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_io_code_is_this_file_descrip>`_
+
+  * `The special problem of disappearing file descriptors
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_disappearing_>`_
+  * `The special problem of dup'ed file descriptors
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_dup_ed_file_d>`_
+  * `The special problem of files
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_files>`_
+  * `The special problem of fork
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_fork>`_
+  * `The special problem of SIGPIPE
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_SIGPIPE>`_
+  * `The special problem of accept()ing when you can't
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_accept_ing_wh>`_
 
   set(fd, events)
     * fd (int or object)
-        TODO.
+        The file descriptor to be monitored, can be an int or any Python object
+        having a ``fileno`` method.
 
     * events (int)
-        either ``EV_READ``, ``EV_WRITE`` or ``EV_READ | EV_WRITE``.
+        Either ``EV_READ``, ``EV_WRITE`` or ``EV_READ | EV_WRITE``.
 
     Configures the watcher.
 
@@ -985,50 +1041,116 @@ Io(fd, events, loop, callback[, data=None, priority=0])
 
 
 Timer
------
++++++
 
 Timer(after, repeat, loop, callback[, data=None, priority=0])
   * after (float)
-      TODO.
+      Configure the timer to trigger after *after* seconds.
 
   * repeat (float)
-      TODO.
+      If *repeat* is ``0.0``, then it will automatically be stopped once the
+      timeout is reached. If it is positive, then the timer will automatically
+      be configured to trigger again every *repeat* seconds later, again and
+      again, until stopped manually.
 
   * loop (`Loop`_)
-      TODO.
+      Loop object responsible for this watcher (accessible through
+      `Watcher.loop`_).
 
   * callback (callable)
-      TODO.
+      See `Watcher.callback`_.
 
   * data (object)
-      TODO.
+      Any Python object you might want to attach to the watcher (stored in
+      `Watcher.data`_).
 
   * priority (int)
-      TODO.
+      See `Watcher.priority`_.
 
-  TODO.
+  `Timer`_ watchers are simple relative timers that generate an event after a
+  given time, and optionally repeating in regular intervals after that.
+
+  The timers are based on real time, that is, if you register an event that
+  times out after an hour and you reset your system clock to January last year,
+  it will still time out after (roughly) one hour. "Roughly" because detecting
+  time jumps is hard, and some inaccuracies are unavoidable.
+
+  The callback is guaranteed to be invoked only **after** its timeout has passed
+  (**not at**, so on systems with very low-resolution clocks this might
+  introduce a small delay). If multiple timers become ready during the same loop
+  iteration then the ones with earlier time-out values are invoked before ones
+  of the same priority with later time-out values (but this is no longer true
+  when a callback calls `Loop.start()`_ recursively).
+
+  The timer itself will do a best-effort at avoiding drift, that is, if you
+  configure a timer to trigger every 10 seconds, then it will normally trigger
+  at exactly 10 second intervals. If, however, your program cannot keep up with
+  the timer (because it takes longer than those 10 seconds to do stuff) the
+  timer will not fire more than once per event loop iteration.
+
+  **See also:** `ev_timer - relative and optionally repeating timeouts
+  <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_timer_code_relative_and_opti>`_
+
+  * `Be smart about timeouts
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Be_smart_about_timeouts>`_
+  * `The special problem of being too early
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_being_too_ear>`_
+  * `The special problem of time updates
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_time_updates>`_
+  * `The special problem of unsynchronised clocks
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_unsynchronise>`_
+  * `The special problems of suspended animation
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problems_of_suspended_an>`_
 
   set(after, repeat)
     * after (float)
-        TODO.
+        Configure the timer to trigger after *after* seconds.
 
     * repeat (float)
-        TODO.
+        If *repeat* is ``0.0``, then it will automatically be stopped once the
+        timeout is reached. If it is positive, then the timer will automatically
+        be configured to trigger again every *repeat* seconds later, again and
+        again, until stopped manually.
 
     Configures the watcher.
 
+  .. _Timer.reset():
+
   reset()
-    TODO.
+    This will act as if the timer timed out, and restarts it again if it is
+    repeating. It basically works like calling `Watcher.stop()`_, updating the
+    timeout to the *repeat* value and calling `Watcher.start()`_. The exact
+    semantics are:
+
+    * if the timer is pending, the pending status is always cleared.
+    * if the timer is started but non-repeating, stop it (as if it timed out,
+      without invoking it).
+    * if the timer is repeating, make the *repeat* value the new timeout and
+      start the timer, if necessary.
+
+    **See also:** `Be smart about timeouts
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Be_smart_about_timeouts>`_
+    for a usage example.
 
   repeat
-    TODO.
+    The current *repeat* value. Will be used each time the watcher times out or
+    `Timer.reset()`_ is called, and determines the next timeout (if any), which
+    is also when any modifications are taken into account.
 
   remaining (read only)
-    TODO.
+    The remaining time until a timer fires. If the timer is active, then this
+    time is relative to the current event loop time, otherwise it's the timeout
+    value currently configured.
+
+    That is, after instanciating a `Timer`_ with an *after* value of ``5.0`` and
+    a *repeat* value of ``7.0``, *remaining* is ``5.0``. When the timer is
+    started and one second passes, *remaining* will be ``4.0``. When the
+    timer expires and is restarted, it will be roughly ``7.0`` (likely slightly
+    less as callback invocation takes some time, too), and so on.
 
 
 Periodic
---------
+++++++++
 
 Periodic(offset, interval, loop, callback[, data=None, priority=0])
   * offset (float)
@@ -1038,18 +1160,23 @@ Periodic(offset, interval, loop, callback[, data=None, priority=0])
       TODO.
 
   * loop (`Loop`_)
-      TODO.
+      Loop object responsible for this watcher (accessible through
+      `Watcher.loop`_).
 
   * callback (callable)
-      TODO.
+      See `Watcher.callback`_.
 
   * data (object)
-      TODO.
+      Any Python object you might want to attach to the watcher (stored in
+      `Watcher.data`_).
 
   * priority (int)
-      TODO.
+      See `Watcher.priority`_.
 
   TODO.
+
+  **See also:** `ev_periodic - to cron or not to cron?
+  <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_periodic_code_to_cron_or_not>`_
 
   set(offset, interval)
     * offset (float)
@@ -1072,27 +1199,45 @@ Periodic(offset, interval, loop, callback[, data=None, priority=0])
   at (read only)
     TODO.
 
+`Periodic`_ modes of operation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Absolute timer
+##############
+
+TODO.
+
+Repeating interval timer
+########################
+
+TODO.
+
 
 Scheduler
----------
++++++++++
 
 Scheduler(scheduler, loop[, callback=None, data=None, priority=0])
   * scheduler (callable)
       TODO.
 
   * loop (`Loop`_)
-      TODO.
+      Loop object responsible for this watcher (accessible through
+      `Watcher.loop`_).
 
   * callback (callable)
-      TODO.
+      See `Watcher.callback`_.
 
   * data (object)
-      TODO.
+      Any Python object you might want to attach to the watcher (stored in
+      `Watcher.data`_).
 
   * priority (int)
-      TODO.
+      See `Watcher.priority`_.
 
   TODO.
+
+  **See also:** `ev_periodic - to cron or not to cron?
+  <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_periodic_code_to_cron_or_not>`_
 
   reset()
     TODO.
@@ -1105,25 +1250,35 @@ Scheduler(scheduler, loop[, callback=None, data=None, priority=0])
 
 
 Signal
-------
+++++++
 
 Signal(signum, loop, callback[, data=None, priority=0])
   * signum (int)
       TODO.
 
   * loop (`Loop`_)
-      TODO.
+      Loop object responsible for this watcher (accessible through
+      `Watcher.loop`_).
 
   * callback (callable)
-      TODO.
+      See `Watcher.callback`_.
 
   * data (object)
-      TODO.
+      Any Python object you might want to attach to the watcher (stored in
+      `Watcher.data`_).
 
   * priority (int)
-      TODO.
+      See `Watcher.priority`_.
 
   TODO.
+
+  **See also:** `ev_signal - signal me when a signal gets signalled!
+  <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_signal_code_signal_me_when_a>`_
+
+  * `The special problem of inheritance over fork/execve/pthread_create
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_inheritance_o>`_
+  * `The special problem of threads signal handling
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_threads_signa>`_
 
   set(signum)
     * signum (int)
@@ -1136,7 +1291,7 @@ Signal(signum, loop, callback[, data=None, priority=0])
 
 
 Child
------
++++++
 
 Child(pid, trace, loop, callback[, data=None, priority=0])
   * pid (int)
@@ -1146,18 +1301,30 @@ Child(pid, trace, loop, callback[, data=None, priority=0])
       TODO.
 
   * loop (`Loop`_)
-      TODO.
+      Loop object responsible for this watcher (accessible through
+      `Watcher.loop`_).
 
   * callback (callable)
-      TODO.
+      See `Watcher.callback`_.
 
   * data (object)
-      TODO.
+      Any Python object you might want to attach to the watcher (stored in
+      `Watcher.data`_).
 
   * priority (int)
-      TODO.
+      See `Watcher.priority`_.
 
   TODO.
+
+  **See also:** `ev_child - watch out for process status changes
+  <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_child_code_watch_out_for_pro>`_
+
+  * `Process Interaction
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Process_Interaction>`_
+  * `Overriding the Built-In Processing
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Overriding_the_Built_In_Processing>`_
+  * `Stopping the Child Watcher
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Stopping_the_Child_Watcher>`_
 
   set(pid, trace)
     * pid (int)
@@ -1179,44 +1346,60 @@ Child(pid, trace, loop, callback[, data=None, priority=0])
 
 
 Idle
-----
+++++
 
 Idle(loop, callback[, data=None, priority=0])
   * loop (`Loop`_)
-      TODO.
+      Loop object responsible for this watcher (accessible through
+      `Watcher.loop`_).
 
   * callback (callable)
-      TODO.
+      See `Watcher.callback`_.
 
   * data (object)
-      TODO.
+      Any Python object you might want to attach to the watcher (stored in
+      `Watcher.data`_).
 
   * priority (int)
-      TODO.
+      See `Watcher.priority`_.
 
   TODO.
 
+  **See also:** `ev_idle - when you've got nothing better to do...
+  <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_idle_code_when_you_ve_got_no>`_
+
+  * `Abusing an ev_idle watcher for its side-effect
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Abusing_an_code_ev_idle_code_watcher>`_
+
 
 Prepare/Check
--------------
++++++++++++++
 
 Prepare(loop, callback[, data=None, priority=0])
   .. ..
 
 Check(loop, callback[, data=None, priority=0])
   * loop (`Loop`_)
-      TODO.
+      Loop object responsible for this watcher (accessible through
+      `Watcher.loop`_).
 
   * callback (callable)
-      TODO.
+      See `Watcher.callback`_.
 
   * data (object)
-      TODO.
+      Any Python object you might want to attach to the watcher (stored in
+      `Watcher.data`_).
 
   * priority (int)
-      TODO.
+      See `Watcher.priority`_.
 
   TODO.
+
+  **See also:** `ev_prepare and ev_check - customise your event loop!
+  <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_prepare_code_and_code_ev_che>`_
+
+  * `Abusing an ev_check watcher for its side-effect
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Abusing_an_code_ev_check_code_watche>`_
 
 .. _Check: `Prepare/Check`_
 
@@ -1224,25 +1407,33 @@ Check(loop, callback[, data=None, priority=0])
 
 
 Embed
------
++++++
 
 Embed(other, loop[, callback=None, data=None, priority=0])
   * other (`Loop`_)
       TODO.
 
   * loop (`Loop`_)
-      TODO.
+      Loop object responsible for this watcher (accessible through
+      `Watcher.loop`_).
 
   * callback (callable or ``None``)
-      TODO.
+      See `Watcher.callback`_.
 
   * data (object)
-      TODO.
+      Any Python object you might want to attach to the watcher (stored in
+      `Watcher.data`_).
 
   * priority (int)
-      TODO.
+      See `Watcher.priority`_.
 
   TODO.
+
+  **See also:** `ev_embed - when one backend isn't enough...
+  <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_embed_code_when_one_backend_>`_
+
+  * `ev_embed and fork
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_embed_code_and_fork>`_
 
   set(other)
     * other (`Loop`_)
@@ -1261,41 +1452,57 @@ Embed(other, loop[, callback=None, data=None, priority=0])
 
 
 Fork
-----
+++++
 
 Fork(loop, callback[, data=None, priority=0])
   * loop (`Loop`_)
-      TODO.
+      Loop object responsible for this watcher (accessible through
+      `Watcher.loop`_).
 
   * callback (callable)
-      TODO.
+      See `Watcher.callback`_.
 
   * data (object)
-      TODO.
+      Any Python object you might want to attach to the watcher (stored in
+      `Watcher.data`_).
 
   * priority (int)
-      TODO.
+      See `Watcher.priority`_.
 
   TODO.
+
+  **See also:** `ev_fork - the audacity to resume the event loop after a fork
+  <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_fork_code_the_audacity_to_re>`_
+
+  * `The special problem of life after fork - how is it possible?
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_life_after_fo>`_
 
 
 Async
------
++++++
 
 Async(loop, callback[, data=None, priority=0])
   * loop (`Loop`_)
-      TODO.
+      Loop object responsible for this watcher (accessible through
+      `Watcher.loop`_).
 
   * callback (callable)
-      TODO.
+      See `Watcher.callback`_.
 
   * data (object)
-      TODO.
+      Any Python object you might want to attach to the watcher (stored in
+      `Watcher.data`_).
 
   * priority (int)
-      TODO.
+      See `Watcher.priority`_.
 
   TODO.
+
+  **See also:** `ev_async - how to wake up an event loop
+  <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#code_ev_async_code_how_to_wake_up_an>`_
+
+  * `Queueing
+    <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Queueing>`_
 
   send()
     TODO.
