@@ -165,7 +165,7 @@ __Watcher_Callback(struct ev_loop *loop, ev_watcher *watcher, int revents)
         PyErr_Restore(err_type, err_value, err_traceback);
         if (!PyErr_Occurred()) {
             if (errno) { // there's a high probability it is related
-                PyErr_SetFromErrno(PyExc_OSError);
+                _PyErr_SetFromErrno();
             }
             else {
                 PyErr_SetString(Error, "unspecified libev error");

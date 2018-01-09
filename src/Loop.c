@@ -18,7 +18,7 @@ _Loop_WarnOrStop(struct ev_loop *loop, PyObject *context)
     _Py_IDENTIFIER(__err_fatal__);
     Loop *self = ev_userdata(loop);
 
-    if (_PyObject_HasAttrId(context, &PyId___err_fatal__) ||
+    if (__PyObject_HasAttrId(context, &PyId___err_fatal__) ||
         self->callback != Py_None ||
         !PyErr_ExceptionMatches(PyExc_Exception)) {
         _Loop_Exit(loop);
