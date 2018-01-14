@@ -26,7 +26,7 @@ from signal import pthread_sigmask, SIG_BLOCK, SIG_UNBLOCK, NSIG, SIGTERM, SIGIN
 from collections import deque
 from abc import ABCMeta, abstractmethod
 
-from . import default_loop, Loop, EVFLAG_AUTO, EVFLAG_NOSIGMASK, EV_MAXPRI
+from . import default_loop, Loop, EVFLAG_AUTO, EVFLAG_NOSIGMASK, EVBREAK_ALL, EV_MAXPRI
 
 
 __all__ = ["ServerLoop", "ClientLoop", "ParentLoop", "ChildLoop"]
@@ -94,6 +94,7 @@ class _BaseLoop(metaclass=ABCMeta):
             except Exception:
                 self._on_error("error while stopping")
             finally:
+                self._loop.stop(EVBREAK_ALL)
                 self._stopping = False
 
     @property
