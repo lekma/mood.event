@@ -17,7 +17,7 @@ _Scheduler_Stop(struct ev_loop *loop, ev_prepare *prepare, int revents)
     // set the exception back to the original one
     PyErr_Restore(self->err_type, self->err_value, self->err_traceback);
     // reset err_ members because we might get restarted
-    // (with another scheduler for example)
+    // (with another reschedule callback for example)
     self->err_traceback = NULL;
     self->err_value = NULL;
     self->err_type = NULL;
@@ -27,7 +27,7 @@ _Scheduler_Stop(struct ev_loop *loop, ev_prepare *prepare, int revents)
         _Loop_Exit(loop);
     }
     else {
-        _Loop_WarnOrStop(loop, self->scheduler);
+        _Loop_WarnOrStop(loop, self->reschedule);
     }
 }
 
@@ -44,7 +44,7 @@ _Scheduler_Schedule(ev_periodic *periodic, double now)
         self->err_fatal = 1;
         goto fail;
     }
-    pyresult = PyObject_CallFunctionObjArgs(self->scheduler, self, pynow, NULL);
+    pyresult = PyObject_CallFunctionObjArgs(self->reschedule, self, pynow, NULL);
     Py_DECREF(pynow);
     if (!pyresult) {
         goto fail;
@@ -72,10 +72,10 @@ end:
 
 /* set the Scheduler */
 static int
-_Scheduler_Set(Scheduler *self, PyObject *scheduler)
+_Scheduler_Set(Scheduler *self, PyObject *reschedule)
 {
-    _Py_CHECK_CALLABLE(scheduler, -1);
-    _Py_SET_MEMBER(self->scheduler, scheduler);
+    _Py_CHECK_CALLABLE(reschedule, -1);
+    _Py_SET_MEMBER(self->reschedule, reschedule);
     return 0;
 }
 
@@ -86,7 +86,7 @@ _Scheduler_Set(Scheduler *self, PyObject *scheduler)
 
 /* SchedulerType.tp_doc */
 PyDoc_STRVAR(Scheduler_tp_doc,
-"Scheduler(scheduler, loop[, callback=None, data=None, priority=0])");
+"Scheduler(reschedule, loop[, callback=None, data=None, priority=0])");
 
 
 /* SchedulerType.tp_finalize */
@@ -109,7 +109,7 @@ Scheduler_tp_traverse(Scheduler *self, visitproc visit, void *arg)
     Py_VISIT(self->err_traceback);
     Py_VISIT(self->err_value);
     Py_VISIT(self->err_type);
-    Py_VISIT(self->scheduler);
+    Py_VISIT(self->reschedule);
     return _Watcher_tp_traverse((_Watcher *)self, visit, arg);
 }
 
@@ -121,7 +121,7 @@ Scheduler_tp_clear(Scheduler *self)
     Py_CLEAR(self->err_traceback);
     Py_CLEAR(self->err_value);
     Py_CLEAR(self->err_type);
-    Py_CLEAR(self->scheduler);
+    Py_CLEAR(self->reschedule);
     return _Watcher_tp_clear((_Watcher *)self);
 }
 
@@ -151,15 +151,15 @@ static PyMethodDef Scheduler_tp_methods[] = {
 };
 
 
-/* Scheduler.scheduler */
+/* Scheduler.reschedule */
 static PyObject *
-Scheduler_scheduler_get(Scheduler *self, void *closure)
+Scheduler_reschedule_get(Scheduler *self, void *closure)
 {
-    _Py_RETURN_OBJECT(self->scheduler);
+    _Py_RETURN_OBJECT(self->reschedule);
 }
 
 static int
-Scheduler_scheduler_set(Scheduler *self, PyObject *value, void *closure)
+Scheduler_reschedule_set(Scheduler *self, PyObject *value, void *closure)
 {
     _Py_PROTECTED_ATTRIBUTE(value, -1);
     return _Scheduler_Set(self, value);
@@ -168,8 +168,8 @@ Scheduler_scheduler_set(Scheduler *self, PyObject *value, void *closure)
 
 /* SchedulerType.tp_getsets */
 static PyGetSetDef Scheduler_tp_getsets[] = {
-    {"scheduler", (getter)Scheduler_scheduler_get,
-     (setter)Scheduler_scheduler_set, NULL, NULL},
+    {"reschedule", (getter)Scheduler_reschedule_get,
+     (setter)Scheduler_reschedule_set, NULL, NULL},
     {"at", (getter)Periodic_at_get,
      _Readonly_attribute_set, NULL, NULL},
     {NULL}  /* Sentinel */
@@ -180,22 +180,22 @@ static PyGetSetDef Scheduler_tp_getsets[] = {
 static int
 Scheduler_tp_init(Scheduler *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"scheduler",
+    static char *kwlist[] = {"reschedule",
                              "loop", "callback", "data", "priority", NULL};
-    PyObject *scheduler;
+    PyObject *reschedule;
     Loop *loop;
     PyObject *callback, *data = Py_None;
     int priority = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO!O|Oi:__init__", kwlist,
-            &scheduler,
+            &reschedule,
             &LoopType, &loop, &callback, &data, &priority)) {
         return -1;
     }
     if (__Watcher_Init((_Watcher *)self, loop, callback, data, priority)) {
         return -1;
     }
-    return _Scheduler_Set(self, scheduler);
+    return _Scheduler_Set(self, reschedule);
 }
 
 

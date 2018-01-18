@@ -135,7 +135,7 @@ static PyTypeObject PeriodicType;
 typedef struct {
     _Watcher _watcher;
     ev_prepare *prepare;
-    PyObject *scheduler;
+    PyObject *reschedule;
     PyObject *err_type;
     PyObject *err_value;
     PyObject *err_traceback;

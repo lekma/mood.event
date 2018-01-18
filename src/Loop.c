@@ -406,21 +406,21 @@ Loop_periodic(Loop *self, PyObject *args)
                                         self, callback, data, priority, NULL);
 }
 #if EV_PREPARE_ENABLE
-/* Loop.scheduler(scheduler, callback[, data, priority]) -> Scheduler */
+/* Loop.scheduler(reschedule, callback[, data, priority]) -> Scheduler */
 PyDoc_STRVAR(Loop_scheduler_doc,
-"scheduler(scheduler, callback[, data, priority]) -> Scheduler");
+"scheduler(reschedule, callback[, data, priority]) -> Scheduler");
 
 static PyObject *
 Loop_scheduler(Loop *self, PyObject *args)
 {
-    PyObject *scheduler;
+    PyObject *reschedule;
     PyObject *callback, *data = Py_None, *priority = NULL;
 
-    if (!PyArg_UnpackTuple(args, "scheduler", 2, 4, &scheduler,
+    if (!PyArg_UnpackTuple(args, "scheduler", 2, 4, &reschedule,
                            &callback, &data, &priority)) {
         return NULL;
     }
-    return PyObject_CallFunctionObjArgs((PyObject *)&SchedulerType, scheduler,
+    return PyObject_CallFunctionObjArgs((PyObject *)&SchedulerType, reschedule,
                                         self, callback, data, priority, NULL);
 }
 #endif
