@@ -12,4 +12,4 @@ You register interest in certain events by registering so-called event watchers,
 which you initialise with the details of the event, and then hand over to libev
 by starting the watcher.
 
-See https://github.com/lekma/mood.event for more info.
+See https://mood.readthedocs.io/projects/event/ for more info.

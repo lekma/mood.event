@@ -1,7 +1,7 @@
 .. currentmodule:: mood.event
 
 ========================
-mood.event Documentation
+mood.event documentation
 ========================
 
 Python libev interface
