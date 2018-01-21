@@ -39,6 +39,17 @@ by Marc Lehmann.
     <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod>`_.
 
 
+Useful links
+============
+
+* `Project Home <https://github.com/lekma/mood.event>`_
+* `Download <https://github.com/lekma/mood.event/releases>`_
+* `Bug Tracker <https://github.com/lekma/mood.event/issues>`_
+
+
+Contents
+========
+
 .. toctree::
     :maxdepth: 3
     :titlesonly:

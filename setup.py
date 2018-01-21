@@ -70,6 +70,11 @@ setup(
       long_description_content_type="text",
 
       url="https://github.com/lekma/mood.event",
+      download_url="https://github.com/lekma/mood.event/releases",
+      project_urls={
+          "Documentation": "https://mood.readthedocs.io/projects/event/",
+          "Bug Tracker": "https://github.com/lekma/mood.event/issues"
+      },
       author="Malek Hadj-Ali",
       author_email="lekmalek@gmail.com",
       license="GNU General Public License v3 (GPLv3)",
@@ -84,19 +89,18 @@ setup(
 
       ext_package=pkg_name,
       ext_modules=[
-                   Extension("_ev", ["src/_ev.c"],
-                             define_macros=[PKG_VERSION],
-                             libraries=[libev_name])
+          Extension("_ev", ["src/_ev.c"], define_macros=[PKG_VERSION],
+                    libraries=[libev_name])
       ],
 
       classifiers=[
-                   "Development Status :: 5 - Production/Stable",
-                   "Intended Audience :: Developers",
-                   "Intended Audience :: System Administrators",
-                   "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-                   "Operating System :: POSIX",
-                   "Programming Language :: Python :: 3.5",
-                   "Programming Language :: Python :: Implementation :: CPython"
+          "Development Status :: 5 - Production/Stable",
+          "Intended Audience :: Developers",
+          "Intended Audience :: System Administrators",
+          "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+          "Operating System :: POSIX",
+          "Programming Language :: Python :: 3.5",
+          "Programming Language :: Python :: Implementation :: CPython"
       ]
 )
 
