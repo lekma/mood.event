@@ -243,7 +243,7 @@ XXX: yeah, I know. But it makes my life so much easier and
 
 /* allocate memory from the Python heap */
 static void *
-_ev_allocator(void *ptr, long size)
+event_allocator(void *ptr, long size)
 {
     void *result = NULL;
 
@@ -262,26 +262,26 @@ _ev_allocator(void *ptr, long size)
     return result;
 }
 
-#define _ev_syserr_cb Py_FatalError
+#define event_syserr_cb Py_FatalError
 
 
 /* ----------------------------------------------------------------------------
  module
  ---------------------------------------------------------------------------- */
 
-/* _ev_def.m_doc */
-PyDoc_STRVAR(_ev_m_doc,
+/* event_def.m_doc */
+PyDoc_STRVAR(event_m_doc,
 "Python libev interface");
 
 
-/* _ev.default_loop([flags=EVFLAG_AUTO, callback=None, data=None,
-                     io_interval=0.0, timeout_interval=0.0]) -> 'default loop' */
-PyDoc_STRVAR(_ev_default_loop_doc,
+/* event.default_loop([flags=EVFLAG_AUTO, callback=None, data=None,
+                       io_interval=0.0, timeout_interval=0.0]) -> 'default loop' */
+PyDoc_STRVAR(event_default_loop_doc,
 "default_loop([flags=EVFLAG_AUTO, callback=None, data=None,\n\
                io_interval=0.0, timeout_interval=0.0]) -> 'default loop'");
 
 static PyObject *
-_ev_default_loop(PyObject *module, PyObject *args, PyObject *kwargs)
+event_default_loop(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     if (!DefaultLoop) {
         DefaultLoop = _Loop_New(args, kwargs, 1);
@@ -298,12 +298,12 @@ _ev_default_loop(PyObject *module, PyObject *args, PyObject *kwargs)
 }
 
 
-/* _ev.fatal */
-PyDoc_STRVAR(_ev_fatal_doc,
+/* event.fatal */
+PyDoc_STRVAR(event_fatal_doc,
 "fatal decorator");
 
 static PyObject *
-_ev_fatal(PyObject *module, PyObject *obj)
+event_fatal(PyObject *module, PyObject *obj)
 {
     _Py_IDENTIFIER(__err_fatal__);
 
@@ -314,23 +314,23 @@ _ev_fatal(PyObject *module, PyObject *obj)
 }
 
 
-/* _ev.time() -> float */
-PyDoc_STRVAR(_ev_time_doc,
+/* event.time() -> float */
+PyDoc_STRVAR(event_time_doc,
 "time() -> float");
 
 static PyObject *
-_ev_time(PyObject *module)
+event_time(PyObject *module)
 {
     return PyFloat_FromDouble(ev_time());
 }
 
 
-/* _ev.sleep(interval) */
-PyDoc_STRVAR(_ev_sleep_doc,
+/* event.sleep(interval) */
+PyDoc_STRVAR(event_sleep_doc,
 "sleep(interval)");
 
 static PyObject *
-_ev_sleep(PyObject *module, PyObject *args)
+event_sleep(PyObject *module, PyObject *args)
 {
     double interval;
 
@@ -353,57 +353,57 @@ _ev_sleep(PyObject *module, PyObject *args)
 }
 
 
-/* _ev.abi_version() -> (int, int) */
-PyDoc_STRVAR(_ev_abi_version_doc,
+/* event.abi_version() -> (int, int) */
+PyDoc_STRVAR(event_abi_version_doc,
 "abi_version() -> (int, int)");
 
 static PyObject *
-_ev_abi_version(PyObject *module)
+event_abi_version(PyObject *module)
 {
     return Py_BuildValue("ii", ev_version_major(), ev_version_minor());
 }
 
 
-/* _ev.supported_backends() -> int */
-PyDoc_STRVAR(_ev_supported_backends_doc,
+/* event.supported_backends() -> int */
+PyDoc_STRVAR(event_supported_backends_doc,
 "supported_backends() -> int");
 
 static PyObject *
-_ev_supported_backends(PyObject *module)
+event_supported_backends(PyObject *module)
 {
     return PyLong_FromUnsignedLong(ev_supported_backends());
 }
 
 
-/* _ev.recommended_backends() -> int */
-PyDoc_STRVAR(_ev_recommended_backends_doc,
+/* event.recommended_backends() -> int */
+PyDoc_STRVAR(event_recommended_backends_doc,
 "recommended_backends() -> int");
 
 static PyObject *
-_ev_recommended_backends(PyObject *module)
+event_recommended_backends(PyObject *module)
 {
     return PyLong_FromUnsignedLong(ev_recommended_backends());
 }
 
 
-/* _ev.embeddable_backends() -> int */
-PyDoc_STRVAR(_ev_embeddable_backends_doc,
+/* event.embeddable_backends() -> int */
+PyDoc_STRVAR(event_embeddable_backends_doc,
 "embeddable_backends() -> int");
 
 static PyObject *
-_ev_embeddable_backends(PyObject *module)
+event_embeddable_backends(PyObject *module)
 {
     return PyLong_FromUnsignedLong(ev_embeddable_backends());
 }
 
 
 #if EV_SIGNAL_ENABLE
-/* _ev.feed_signal(signum) */
-PyDoc_STRVAR(_ev_feed_signal_doc,
+/* event.feed_signal(signum) */
+PyDoc_STRVAR(event_feed_signal_doc,
 "feed_signal(signum)");
 
 static PyObject *
-_ev_feed_signal(PyObject *module, PyObject *args)
+event_feed_signal(PyObject *module, PyObject *args)
 {
     int signum;
 
@@ -416,81 +416,81 @@ _ev_feed_signal(PyObject *module, PyObject *args)
 #endif
 
 
-/* _ev_def.m_methods */
-static PyMethodDef _ev_m_methods[] = {
-    {"default_loop", (PyCFunction)_ev_default_loop,
-     METH_VARARGS | METH_KEYWORDS, _ev_default_loop_doc},
-    {"fatal", (PyCFunction)_ev_fatal,
-     METH_O, _ev_fatal_doc},
-    {"time", (PyCFunction)_ev_time,
-     METH_NOARGS, _ev_time_doc},
-    {"sleep", (PyCFunction)_ev_sleep,
-     METH_VARARGS, _ev_sleep_doc},
-    {"abi_version", (PyCFunction)_ev_abi_version,
-     METH_NOARGS, _ev_abi_version_doc},
-    {"supported_backends", (PyCFunction)_ev_supported_backends,
-     METH_NOARGS, _ev_supported_backends_doc},
-    {"recommended_backends", (PyCFunction)_ev_recommended_backends,
-     METH_NOARGS, _ev_recommended_backends_doc},
-    {"embeddable_backends", (PyCFunction)_ev_embeddable_backends,
-     METH_NOARGS, _ev_embeddable_backends_doc},
+/* event_def.m_methods */
+static PyMethodDef event_m_methods[] = {
+    {"default_loop", (PyCFunction)event_default_loop,
+     METH_VARARGS | METH_KEYWORDS, event_default_loop_doc},
+    {"fatal", (PyCFunction)event_fatal,
+     METH_O, event_fatal_doc},
+    {"time", (PyCFunction)event_time,
+     METH_NOARGS, event_time_doc},
+    {"sleep", (PyCFunction)event_sleep,
+     METH_VARARGS, event_sleep_doc},
+    {"abi_version", (PyCFunction)event_abi_version,
+     METH_NOARGS, event_abi_version_doc},
+    {"supported_backends", (PyCFunction)event_supported_backends,
+     METH_NOARGS, event_supported_backends_doc},
+    {"recommended_backends", (PyCFunction)event_recommended_backends,
+     METH_NOARGS, event_recommended_backends_doc},
+    {"embeddable_backends", (PyCFunction)event_embeddable_backends,
+     METH_NOARGS, event_embeddable_backends_doc},
 #if EV_SIGNAL_ENABLE
-    {"feed_signal", (PyCFunction)_ev_feed_signal,
-     METH_VARARGS, _ev_feed_signal_doc},
+    {"feed_signal", (PyCFunction)event_feed_signal,
+     METH_VARARGS, event_feed_signal_doc},
 #endif
     {NULL} /* Sentinel */
 };
 
 
-/* _ev_def.m_traverse */
+/* event_def.m_traverse */
 static int
-_ev_m_traverse(PyObject *module, visitproc visit, void *arg)
+event_m_traverse(PyObject *module, visitproc visit, void *arg)
 {
     Py_VISIT(Error);
     return 0;
 }
 
 
-/* _ev_def.m_clear */
+/* event_def.m_clear */
 static int
-_ev_m_clear(PyObject *module)
+event_m_clear(PyObject *module)
 {
     Py_CLEAR(Error);
     return 0;
 }
 
 
-/* _ev_def.m_free */
+/* event_def.m_free */
 static void
-_ev_m_free(PyObject *module)
+event_m_free(PyObject *module)
 {
-    _ev_m_clear(module);
+    event_m_clear(module);
 }
 
 
-/* _ev_def
+/* event_def
    unfortunately this module cannot support sub-interpreters
    because there can be only one DefaultLoop per process */
-static PyModuleDef _ev_def = {
+static PyModuleDef event_def = {
     PyModuleDef_HEAD_INIT,
-    "_ev",                                    /* m_name */
-    _ev_m_doc,                                /* m_doc */
+    "event",                                  /* m_name */
+    event_m_doc,                              /* m_doc */
     -1,                                       /* m_size */
-    _ev_m_methods,                            /* m_methods */
+    event_m_methods,                          /* m_methods */
     NULL,                                     /* m_slots */
-    (traverseproc)_ev_m_traverse,             /* m_traverse */
-    (inquiry)_ev_m_clear,                     /* m_clear */
-    (freefunc)_ev_m_free                      /* m_free */
+    (traverseproc)event_m_traverse,           /* m_traverse */
+    (inquiry)event_m_clear,                   /* m_clear */
+    (freefunc)event_m_free                    /* m_free */
 };
 
 
 /* module initialization */
 PyMODINIT_FUNC
-PyInit__ev(void)
+PyInit_event(void)
 {
     PyObject *module = NULL;
 
-    if ((module = PyModule_Create(&_ev_def))) {
+    if ((module = PyModule_Create(&event_def))) {
         if (
             PyModule_AddStringConstant(module, "__version__", PKG_VERSION) ||
             _PyModule_AddNewException(module, "Error", "mood.event", NULL, NULL, &Error) ||
@@ -608,8 +608,8 @@ PyInit__ev(void)
         }
         else {
             // setup libev
-            ev_set_allocator(_ev_allocator);
-            ev_set_syserr_cb(_ev_syserr_cb);
+            ev_set_allocator(event_allocator);
+            ev_set_syserr_cb(event_syserr_cb);
         }
     }
     return module;

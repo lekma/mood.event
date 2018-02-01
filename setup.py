@@ -33,7 +33,7 @@ from sys import argv
 
 # pkg
 pkg_name = "mood.event"
-pkg_version = "1.0.6"
+pkg_version = "1.1.0"
 pkg_desc = "Python libev interface"
 
 PKG_VERSION = ("PKG_VERSION", "\"{0}\"".format(pkg_version))
@@ -87,9 +87,9 @@ setup(
       namespace_packages=["mood"],
       zip_safe=False,
 
-      ext_package=pkg_name,
+      ext_package="mood",
       ext_modules=[
-          Extension("_ev", ["src/_ev.c"], define_macros=[PKG_VERSION],
+          Extension("event", ["src/event.c"], define_macros=[PKG_VERSION],
                     libraries=[libev_name])
       ],
 
