@@ -15,3 +15,7 @@ by starting the watcher.
 
 See `mood.event documentation <https://mood.readthedocs.io/projects/event/>`_
 for more info.
+
+
+-----
+
