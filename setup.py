@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Copyright © 2017 Malek Hadj-Ali
+# Copyright © 2019 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -33,7 +33,7 @@ from sys import argv
 
 # pkg
 pkg_name = "mood.event"
-pkg_version = "1.1.1"
+pkg_version = "1.1.2"
 pkg_desc = "Python libev interface"
 
 PKG_VERSION = ("PKG_VERSION", "\"{0}\"".format(pkg_version))
