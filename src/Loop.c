@@ -2,12 +2,9 @@
  helpers
  ---------------------------------------------------------------------------- */
 
-#define _Loop_FullStop(l) ev_break((l), EVBREAK_ALL)
-
-#define _Loop_Exit(l) \
+#define _Loop_FullStop(l) \
     do { \
-        _Loop_FullStop((l)); \
-        return; \
+        ev_break((l), EVBREAK_ALL); \
     } while (0)
 
 
@@ -21,7 +18,7 @@ _Loop_WarnOrStop(struct ev_loop *loop, PyObject *context)
     if (__PyObject_HasAttrId(context, &PyId___err_fatal__) ||
         self->callback != Py_None ||
         !PyErr_ExceptionMatches(PyExc_Exception)) {
-        _Loop_Exit(loop);
+        _Loop_FullStop(loop);
     }
     else {
         PyErr_WriteUnraisable(context);
@@ -36,10 +33,11 @@ _Loop_InvokePending(struct ev_loop *loop)
     Loop *self = ev_userdata(loop);
     PyObject *result = NULL;
 
-    if (!(result = PyObject_CallFunctionObjArgs(self->callback, self, NULL))) {
-        _Loop_Exit(loop);
+    if (PyErr_Occurred() ||
+        !(result = PyObject_CallFunctionObjArgs(self->callback, self, NULL))) {
+        _Loop_FullStop(loop);
     }
-    Py_DECREF(result);
+    Py_XDECREF(result);
 }
 
 #define _Loop_SetCallback(L, cb) \
@@ -64,13 +62,22 @@ _Loop_InvokePending(struct ev_loop *loop)
 static void
 _Loop_Release(struct ev_loop *loop)
 {
-    ((Loop *)ev_userdata(loop))->tstate = PyEval_SaveThread();
+    Loop *self = ev_userdata(loop);
+
+    if (!self->tstate) {
+        self->tstate = PyEval_SaveThread();
+    }
 }
 
 static void
 _Loop_Acquire(struct ev_loop *loop)
 {
-    PyEval_RestoreThread(((Loop *)ev_userdata(loop))->tstate);
+    Loop *self = ev_userdata(loop);
+
+    if (self->tstate) {
+        PyEval_RestoreThread(self->tstate);
+        self->tstate = NULL;
+    }
 }
 
 

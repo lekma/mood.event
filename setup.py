@@ -33,7 +33,7 @@ from sys import argv
 
 # pkg
 pkg_name = "mood.event"
-pkg_version = "1.1.2"
+pkg_version = "1.2.0"
 pkg_desc = "Python libev interface"
 
 PKG_VERSION = ("PKG_VERSION", "\"{0}\"".format(pkg_version))
@@ -48,7 +48,7 @@ def check_version(current_version, minimum_version, name):
 
 # libev
 libev_name = "ev"
-libev_min_version = "4.22"
+libev_min_version = "4.27"
 
 def libev_version():
     libev_dll_name = find_library(libev_name)

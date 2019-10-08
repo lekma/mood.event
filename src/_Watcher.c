@@ -142,27 +142,26 @@ __Watcher_Stop(_Watcher *self)
 }
 
 
-#define __Watcher_WarnStopped(W, l) \
-    do { \
-        if (PyErr_WarnFormat(PyExc_RuntimeWarning, 1, \
-                             "%R has been stopped", (W))) { \
-            _Loop_Exit((l)); \
-        } \
-    } while (0)
+static void
+__Watcher_WarnStopped(_Watcher *self, struct ev_loop *loop, PyObject *context)
+{
+    PyObject *err_type, *err_value, *err_traceback;
+
+    PyErr_Fetch(&err_type, &err_value, &err_traceback);
+    if (PyErr_WarnFormat(PyExc_RuntimeWarning, 1, "%R has been stopped", self)) {
+        PyErr_WriteUnraisable(context);
+    }
+    PyErr_Restore(err_type, err_value, err_traceback);
+}
 
 /* watcher callback */
 static void
 __Watcher_Callback(struct ev_loop *loop, ev_watcher *watcher, int revents)
 {
-    PyObject *err_type, *err_value, *err_traceback;
     PyObject *pyrevents = NULL, *pyresult = NULL;
     _Watcher *self = watcher->data;
 
     if (revents & EV_ERROR) {
-        PyErr_Fetch(&err_type, &err_value, &err_traceback);
-        // warn that we have been stopped
-        __Watcher_WarnStopped(self, loop);
-        PyErr_Restore(err_type, err_value, err_traceback);
         if (!PyErr_Occurred()) {
             if (errno) { // there's a high probability it is related
                 _PyErr_SetFromErrno();
@@ -171,7 +170,11 @@ __Watcher_Callback(struct ev_loop *loop, ev_watcher *watcher, int revents)
                 PyErr_SetString(Error, "unspecified libev error");
             }
         }
-        _Loop_Exit(loop);
+        // warn that we have been stopped
+        __Watcher_WarnStopped(self, loop, self->callback);
+    }
+    if (PyErr_Occurred()) {
+        _Loop_FullStop(loop);
     }
     else if (self->callback != Py_None) {
         if ((pyrevents = PyLong_FromLong(revents))) {
@@ -186,7 +189,7 @@ __Watcher_Callback(struct ev_loop *loop, ev_watcher *watcher, int revents)
             }
         }
         else {
-            _Loop_Exit(loop);
+            _Loop_FullStop(loop);
         }
     }
 #if EV_EMBED_ENABLE

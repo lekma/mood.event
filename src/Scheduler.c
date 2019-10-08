@@ -12,8 +12,6 @@ _Scheduler_Stop(struct ev_loop *loop, ev_prepare *prepare, int revents)
     ev_periodic_stop(loop, (ev_periodic *)((_Watcher *)self)->watcher);
     // stop this watcher (prepare)
     ev_prepare_stop(loop, prepare);
-    // warn that we have been stopped
-    __Watcher_WarnStopped(self, loop);
     // set the exception back to the original one
     PyErr_Restore(self->err_type, self->err_value, self->err_traceback);
     // reset err_ members because we might get restarted
@@ -23,8 +21,10 @@ _Scheduler_Stop(struct ev_loop *loop, ev_prepare *prepare, int revents)
     self->err_type = NULL;
     fatal = self->err_fatal;
     self->err_fatal = 0;
+    // warn that we have been stopped
+    __Watcher_WarnStopped((_Watcher *)self, loop, self->reschedule);
     if (fatal) {
-        _Loop_Exit(loop);
+        _Loop_FullStop(loop);
     }
     else {
         _Loop_WarnOrStop(loop, self->reschedule);
@@ -39,8 +39,7 @@ _Scheduler_Schedule(ev_periodic *periodic, double now)
     PyObject *pynow = NULL, *pyresult = NULL;
     double result = -1.0;
 
-    pynow = PyFloat_FromDouble(now);
-    if (!pynow) {
+    if (PyErr_Occurred() || !(pynow = PyFloat_FromDouble(now))) {
         self->err_fatal = 1;
         goto fail;
     }
