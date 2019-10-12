@@ -104,7 +104,6 @@ static PyObject *DefaultLoop = NULL;
 typedef struct {
     PyObject_HEAD
     struct ev_loop *loop;
-    PyThreadState *tstate;
     PyObject *callback;
     PyObject *data;
     double io_ival;

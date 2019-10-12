@@ -30,6 +30,7 @@ _Loop_WarnOrStop(struct ev_loop *loop, PyObject *context)
 static void
 _Loop_InvokePending(struct ev_loop *loop)
 {
+    PyGILState_STATE gstate = PyGILState_Ensure();
     Loop *self = ev_userdata(loop);
     PyObject *result = NULL;
 
@@ -38,6 +39,7 @@ _Loop_InvokePending(struct ev_loop *loop)
         _Loop_FullStop(loop);
     }
     Py_XDECREF(result);
+    PyGILState_Release(gstate);
 }
 
 #define _Loop_SetCallback(L, cb) \
@@ -59,28 +61,6 @@ _Loop_InvokePending(struct ev_loop *loop)
     } while (0)
 
 
-static void
-_Loop_Release(struct ev_loop *loop)
-{
-    Loop *self = ev_userdata(loop);
-
-    if (!self->tstate) {
-        self->tstate = PyEval_SaveThread();
-    }
-}
-
-static void
-_Loop_Acquire(struct ev_loop *loop)
-{
-    Loop *self = ev_userdata(loop);
-
-    if (self->tstate) {
-        PyEval_RestoreThread(self->tstate);
-        self->tstate = NULL;
-    }
-}
-
-
 static int
 _Loop_Setup(Loop *self, PyObject *callback, PyObject *data,
             double io_ival, double timeout_ival)
@@ -93,7 +73,6 @@ _Loop_Setup(Loop *self, PyObject *callback, PyObject *data,
     _Py_SET_MEMBER(self->data, data);
     _Loop_SetInterval(self, io_ival, io);
     _Loop_SetInterval(self, timeout_ival, timeout);
-    ev_set_loop_release_cb (self->loop, _Loop_Release, _Loop_Acquire);
     ev_set_userdata(self->loop, self);
 
     return 0;
@@ -229,7 +208,9 @@ Loop_start(Loop *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|i:start", &flags)) {
         return NULL;
     }
+    Py_BEGIN_ALLOW_THREADS
     result = ev_run(self->loop, flags);
+    Py_END_ALLOW_THREADS
     if (PyErr_Occurred()) {
         return NULL;
     }

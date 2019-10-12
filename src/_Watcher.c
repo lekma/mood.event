@@ -158,6 +158,7 @@ __Watcher_WarnStopped(_Watcher *self, struct ev_loop *loop, PyObject *context)
 static void
 __Watcher_Callback(struct ev_loop *loop, ev_watcher *watcher, int revents)
 {
+    PyGILState_STATE gstate = PyGILState_Ensure();
     PyObject *pyrevents = NULL, *pyresult = NULL;
     _Watcher *self = watcher->data;
 
@@ -197,6 +198,7 @@ __Watcher_Callback(struct ev_loop *loop, ev_watcher *watcher, int revents)
         ev_embed_sweep(loop, (ev_embed *)watcher);
     }
 #endif
+    PyGILState_Release(gstate);
 }
 
 

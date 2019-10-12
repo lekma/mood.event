@@ -5,6 +5,7 @@
 static void
 _Scheduler_Stop(struct ev_loop *loop, ev_prepare *prepare, int revents)
 {
+    PyGILState_STATE gstate = PyGILState_Ensure();
     Scheduler *self = prepare->data;
     int fatal;
 
@@ -29,12 +30,14 @@ _Scheduler_Stop(struct ev_loop *loop, ev_prepare *prepare, int revents)
     else {
         _Loop_WarnOrStop(loop, self->reschedule);
     }
+    PyGILState_Release(gstate);
 }
 
 
 static double
 _Scheduler_Schedule(ev_periodic *periodic, double now)
 {
+    PyGILState_STATE gstate = PyGILState_Ensure();
     Scheduler *self = periodic->data;
     PyObject *pynow = NULL, *pyresult = NULL;
     double result = -1.0;
@@ -65,6 +68,7 @@ fail:
     result = now + 1e30;
 
 end:
+    PyGILState_Release(gstate);
     return result;
 }
 
