@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Copyright © 2019 Malek Hadj-Ali
+# Copyright © 2020 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -33,7 +33,7 @@ from sys import argv
 
 # pkg
 pkg_name = "mood.event"
-pkg_version = "1.2.0"
+pkg_version = "1.3.0"
 pkg_desc = "Python libev interface"
 
 PKG_VERSION = ("PKG_VERSION", "\"{0}\"".format(pkg_version))
@@ -48,7 +48,7 @@ def check_version(current_version, minimum_version, name):
 
 # libev
 libev_name = "ev"
-libev_min_version = "4.27"
+libev_min_version = "4.31"
 
 def libev_version():
     libev_dll_name = find_library(libev_name)
@@ -82,7 +82,7 @@ setup(
       keywords="libev event",
 
       setup_requires = ["setuptools>=24.2.0"],
-      python_requires="~=3.5",
+      python_requires="~=3.8",
       packages=find_packages(),
       namespace_packages=["mood"],
       zip_safe=False,
@@ -99,7 +99,7 @@ setup(
           "Intended Audience :: System Administrators",
           "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
           "Operating System :: POSIX",
-          "Programming Language :: Python :: 3.5",
+          "Programming Language :: Python :: 3.8",
           "Programming Language :: Python :: Implementation :: CPython"
       ]
 )

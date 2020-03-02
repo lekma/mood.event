@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2019 Malek Hadj-Ali
+# Copyright © 2020 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -501,12 +501,15 @@ PyInit_event(void)
             _PyModule_AddUnsignedIntMacro(module, EVFLAG_FORKCHECK) ||
             _PyModule_AddUnsignedIntMacro(module, EVFLAG_SIGNALFD) ||
             _PyModule_AddUnsignedIntMacro(module, EVFLAG_NOSIGMASK) ||
+            _PyModule_AddUnsignedIntMacro(module, EVFLAG_NOTIMERFD) ||
             _PyModule_AddUnsignedIntMacro(module, EVBACKEND_SELECT) ||
             _PyModule_AddUnsignedIntMacro(module, EVBACKEND_POLL) ||
             _PyModule_AddUnsignedIntMacro(module, EVBACKEND_EPOLL) ||
             _PyModule_AddUnsignedIntMacro(module, EVBACKEND_KQUEUE) ||
             _PyModule_AddUnsignedIntMacro(module, EVBACKEND_DEVPOLL) ||
             _PyModule_AddUnsignedIntMacro(module, EVBACKEND_PORT) ||
+            _PyModule_AddUnsignedIntMacro(module, EVBACKEND_LINUXAIO) ||
+            _PyModule_AddUnsignedIntMacro(module, EVBACKEND_IOURING) ||
             _PyModule_AddUnsignedIntMacro(module, EVBACKEND_ALL) ||
             _PyModule_AddUnsignedIntMacro(module, EVBACKEND_MASK) ||
             _PyModule_AddIntMacro(module, EVRUN_NOWAIT) ||
