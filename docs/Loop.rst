@@ -436,7 +436,16 @@ behaviour
     unblocking the signals.
     It's also required by POSIX in a threaded program, as libev calls
     :c:func:`sigprocmask`, whose behaviour is officially unspecified.
-    This flag's behaviour will become the default in future versions of libev.
+
+
+.. py:data:: EVFLAG_NOTIMERFD
+
+    When this flag is specified, then libev will avoid using a timerfd to detect
+    time jumps. It will still be able to detect time jumps, but takes longer and
+    has a lower accuracy in doing so, but saves a file descriptor per loop.
+    The current implementation only tries to use a timerfd when the first
+    :py:class:`Periodic` watcher is started and falls back on other methods if
+    it cannot be created, but this behaviour might change in the future.
 
 
 .. _backends:
@@ -513,6 +522,18 @@ backends
 
     While nominally embeddable in other event loops, this feature is broken in
     all kernel versions tested so far.
+
+    This backend maps :py:data:`EV_READ` and :py:data:`EV_WRITE` the same way
+    :py:data:`EVBACKEND_POLL` does.
+
+
+.. py:data:: EVBACKEND_LINUXAIO
+
+    *Availability:* Linux
+
+    Use the Linux-specific Linux AIO (not :manpage:`aio(7)`
+    but :manpage:`io_submit(2)`) event interface available in post-4.18 kernels
+    (but libev only tries to use it in 4.19+).
 
     This backend maps :py:data:`EV_READ` and :py:data:`EV_WRITE` the same way
     :py:data:`EVBACKEND_POLL` does.
