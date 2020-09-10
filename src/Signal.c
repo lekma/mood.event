@@ -1,138 +1,160 @@
-/* ----------------------------------------------------------------------------
- helpers
- ---------------------------------------------------------------------------- */
+/*
+#
+# Copyright © 2020 Malek Hadj-Ali
+# All rights reserved.
+#
+# This file is part of mood.
+#
+# mood is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3
+# as published by the Free Software Foundation.
+#
+# mood is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with mood.  If not, see <http://www.gnu.org/licenses/>.
+#
+*/
 
-/* set the Signal */
-static int
-_Signal_Set(_Watcher *self, int signum)
+
+#include "event.h"
+
+
+#if EV_SIGNAL_ENABLE
+
+
+/* --------------------------------------------------------------------------
+   Signal
+   -------------------------------------------------------------------------- */
+
+static inline Watcher *
+__Signal_New(PyTypeObject *type)
+{
+    return Watcher_New(type, EV_SIGNAL, sizeof(ev_signal));
+}
+
+
+static inline int
+__Signal_Set(Watcher *self, int signum)
 {
     ev_signal_set((ev_signal *)self->watcher, signum);
     return 0;
 }
 
 
-/* ----------------------------------------------------------------------------
- SignalType
- ---------------------------------------------------------------------------- */
+/* Signal_Type -------------------------------------------------------------- */
 
-/* SignalType.tp_doc */
-PyDoc_STRVAR(Signal_tp_doc,
-"Signal(signum, loop, callback[, data=None, priority=0])");
+/* Signal_Type.tp_new */
+static PyObject *
+Signal_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return (PyObject *)__Signal_New(type);
+}
+
+
+/* Signal_Type.tp_init */
+static int
+Signal_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"signum",
+                             "loop", "callback", "data", "priority", NULL};
+
+    int signum = 0;
+    Loop *loop = NULL;
+    PyObject *callback = NULL, *data = Py_None;
+    int priority = 0;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iO!O|Oi:__init__", kwlist,
+            &signum,
+            &Loop_Type, &loop, &callback, &data, &priority)) {
+        return -1;
+    }
+    if (Watcher_Init(self, loop, callback, data, priority)) {
+        return -1;
+    }
+    return __Signal_Set(self, signum);
+}
 
 
 /* Signal.set(signum) */
-PyDoc_STRVAR(Signal_set_doc,
-"set(signum)");
-
 static PyObject *
-Signal_set(_Watcher *self, PyObject *args)
+Signal_set(Watcher *self, PyObject *args)
 {
-    int signum;
+    int signum = 0;
 
-    __Watcher_Set(self);
-    if (!PyArg_ParseTuple(args, "i:set", &signum)) {
-        return NULL;
-    }
-    if (_Signal_Set(self, signum)) {
+    if (Watcher_CannotSet(self) ||
+        !PyArg_ParseTuple(args, "i:set", &signum) ||
+        __Signal_Set(self, signum)) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
 
-/* SignalType.tp_methods */
+/* Signal_Type.tp_methods */
 static PyMethodDef Signal_tp_methods[] = {
-    {"set", (PyCFunction)Signal_set,
-     METH_VARARGS, Signal_set_doc},
+    {"set", (PyCFunction)Signal_set, METH_VARARGS,
+     "set(signum)"},
     {NULL}  /* Sentinel */
 };
 
 
 /* Signal.signum */
 static PyObject *
-Signal_signum_get(_Watcher *self, void *closure)
+Signal_signum_getter(Watcher *self, void *closure)
 {
     return PyLong_FromLong(((ev_signal *)self->watcher)->signum);
 }
 
 
-/* SignalType.tp_getsets */
+/* Signal_Type.tp_getsets */
 static PyGetSetDef Signal_tp_getsets[] = {
-    {"signum", (getter)Signal_signum_get,
-     _Readonly_attribute_set, NULL, NULL},
+    {"signum", (getter)Signal_signum_getter,
+     _Py_READONLY_ATTRIBUTE, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
 
-/* SignalType.tp_init */
-static int
-Signal_tp_init(_Watcher *self, PyObject *args, PyObject *kwargs)
+PyTypeObject Signal_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "mood.event.Signal",
+    .tp_basicsize = sizeof(Watcher),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_doc = "Signal(signum, loop, callback[, data=None, priority=0])",
+    .tp_methods = Signal_tp_methods,
+    .tp_getset = Signal_tp_getsets,
+    .tp_init = (initproc)Signal_tp_init,
+    .tp_new = Signal_tp_new,
+};
+
+
+/* interface ---------------------------------------------------------------- */
+
+Watcher *
+Signal_New(Loop *loop, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {"signum",
-                             "loop", "callback", "data", "priority", NULL};
-    int signum;
-    Loop *loop;
-    PyObject *callback, *data = Py_None;
+                             "callback", "data", "priority", NULL};
+
+    int signum = 0;
+    PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
+    Watcher *self = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iO!O|Oi:__init__", kwlist,
+    if (PyArg_ParseTupleAndKeywords(args, kwargs, "iO|Oi:signal", kwlist,
             &signum,
-            &LoopType, &loop, &callback, &data, &priority)) {
-        return -1;
+            &callback, &data, &priority) &&
+        (self = __Signal_New(&Signal_Type)) &&
+        (Watcher_Init(self, loop, callback, data, priority) ||
+         __Signal_Set(self, signum))) {
+        Py_CLEAR(self);
     }
-    if (__Watcher_Init(self, loop, callback, data, priority)) {
-        return -1;
-    }
-    return _Signal_Set(self, signum);
+    return self;
 }
 
 
-/* SignalType.tp_new */
-static PyObject *
-Signal_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    return __Watcher_New(type, EV_SIGNAL, sizeof(ev_signal));
-}
+#endif // !EV_SIGNAL_ENABLE
 
-
-/* SignalType */
-static PyTypeObject SignalType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "mood.event.Signal",                      /*tp_name*/
-    sizeof(_Watcher),                         /*tp_basicsize*/
-    0,                                        /*tp_itemsize*/
-    0,                                        /*tp_dealloc*/
-    0,                                        /*tp_print*/
-    0,                                        /*tp_getattr*/
-    0,                                        /*tp_setattr*/
-    0,                                        /*tp_compare*/
-    0,                                        /*tp_repr*/
-    0,                                        /*tp_as_number*/
-    0,                                        /*tp_as_sequence*/
-    0,                                        /*tp_as_mapping*/
-    0,                                        /*tp_hash */
-    0,                                        /*tp_call*/
-    0,                                        /*tp_str*/
-    0,                                        /*tp_getattro*/
-    0,                                        /*tp_setattro*/
-    0,                                        /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_FINALIZE, /*tp_flags*/
-    Signal_tp_doc,                            /*tp_doc*/
-    0,                                        /*tp_traverse*/
-    0,                                        /*tp_clear*/
-    0,                                        /*tp_richcompare*/
-    0,                                        /*tp_weaklistoffset*/
-    0,                                        /*tp_iter*/
-    0,                                        /*tp_iternext*/
-    Signal_tp_methods,                        /*tp_methods*/
-    0,                                        /*tp_members*/
-    Signal_tp_getsets,                        /*tp_getsets*/
-    0,                                        /*tp_base*/
-    0,                                        /*tp_dict*/
-    0,                                        /*tp_descr_get*/
-    0,                                        /*tp_descr_set*/
-    0,                                        /*tp_dictoffset*/
-    (initproc)Signal_tp_init,                 /*tp_init*/
-    0,                                        /*tp_alloc*/
-    Signal_tp_new,                            /*tp_new*/
-};

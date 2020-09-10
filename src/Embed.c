@@ -1,49 +1,141 @@
-/* ----------------------------------------------------------------------------
- helpers
- ---------------------------------------------------------------------------- */
+/*
+#
+# Copyright © 2020 Malek Hadj-Ali
+# All rights reserved.
+#
+# This file is part of mood.
+#
+# mood is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3
+# as published by the Free Software Foundation.
+#
+# mood is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with mood.  If not, see <http://www.gnu.org/licenses/>.
+#
+*/
 
-/* set the Embed */
-static int
-_Embed_Set(Embed *self, Loop *other)
+
+#include "event.h"
+
+
+#if EV_EMBED_ENABLE
+
+
+/* --------------------------------------------------------------------------
+   Embed
+   -------------------------------------------------------------------------- */
+
+static inline Embed *
+__Embed_Alloc(PyTypeObject *type)
+{
+    Embed *self = NULL;
+
+    if ((self = (Embed *)Watcher_Alloc(type))) {
+        self->other = NULL;
+    }
+    return self;
+}
+
+
+static inline Embed *
+__Embed_New(PyTypeObject *type)
+{
+    Embed *self = NULL;
+
+    if ((self = __Embed_Alloc(type))) {
+        PyObject_GC_Track(self);
+        if (Watcher_Setup((Watcher *)self, EV_EMBED, sizeof(ev_embed))) {
+            Py_CLEAR(self);
+        }
+    }
+    return self;
+}
+
+
+static inline int
+__Embed_Traverse(Embed *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->other);
+    return Watcher_Traverse((Watcher *)self, visit, arg);
+}
+
+
+static inline int
+__Embed_Clear(Embed *self)
+{
+    Py_CLEAR(self->other);
+    return Watcher_Clear((Watcher *)self);
+}
+
+
+static inline int
+__Embed_Set(Embed *self, Loop *other)
 {
     if (!(ev_backend(other->loop) & ev_embeddable_backends())) {
         PyErr_SetString(Error, "'other' must be embeddable");
         return -1;
     }
     _Py_SET_MEMBER(self->other, other);
-    ev_embed_set((ev_embed *)((_Watcher *)self)->watcher, other->loop);
+    ev_embed_set((ev_embed *)((Watcher *)self)->watcher, other->loop);
     return 0;
 }
 
 
-/* ----------------------------------------------------------------------------
- EmbedType
- ---------------------------------------------------------------------------- */
+/* Embed_Type --------------------------------------------------------------- */
 
-/* EmbedType.tp_doc */
-PyDoc_STRVAR(Embed_tp_doc,
-"Embed(other, loop[, callback=None, data=None, priority=0])");
+/* Embed_Type.tp_new */
+static PyObject *
+Embed_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return (PyObject *)__Embed_New(type);
+}
 
 
-/* EmbedType.tp_traverse */
+/* Embed_Type.tp_init */
+static int
+Embed_tp_init(Embed *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"other",
+                             "loop", "callback", "data", "priority", NULL};
+
+    Loop *other = NULL, *loop = NULL;
+    PyObject *callback = Py_None, *data = Py_None;
+    int priority = 0;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!|OOi:__init__", kwlist,
+            &Loop_Type, &other,
+            &Loop_Type, &loop, &callback, &data, &priority)) {
+        return -1;
+    }
+    if (Watcher_Init((Watcher *)self, loop, callback, data, priority)) {
+        return -1;
+    }
+    return __Embed_Set(self, other);
+}
+
+
+/* Embed_Type.tp_traverse */
 static int
 Embed_tp_traverse(Embed *self, visitproc visit, void *arg)
 {
-    Py_VISIT(self->other);
-    return _Watcher_tp_traverse((_Watcher *)self, visit, arg);
+    return __Embed_Traverse(self, visit, arg);
 }
 
 
-/* EmbedType.tp_clear */
+/* Embed_Type.tp_clear */
 static int
 Embed_tp_clear(Embed *self)
 {
-    Py_CLEAR(self->other);
-    return _Watcher_tp_clear((_Watcher *)self);
+    return __Embed_Clear(self);
 }
 
 
-/* EmbedType.tp_dealloc */
+/* Embed_Type.tp_dealloc */
 static void
 Embed_tp_dealloc(Embed *self)
 {
@@ -51,25 +143,20 @@ Embed_tp_dealloc(Embed *self)
         return;
     }
     PyObject_GC_UnTrack(self);
-    Embed_tp_clear(self);
-    __Watcher_Free((_Watcher *)self);
+    __Embed_Clear(self);
+    Watcher_Dealloc((Watcher *)self);
 }
 
 
 /* Embed.set(other) */
-PyDoc_STRVAR(Embed_set_doc,
-"set(other)");
-
 static PyObject *
 Embed_set(Embed *self, PyObject *args)
 {
-    Loop *other;
+    Loop *other = NULL;
 
-    __Watcher_Set((_Watcher *)self);
-    if (!PyArg_ParseTuple(args, "O!:set", &LoopType, &other)) {
-        return NULL;
-    }
-    if (_Embed_Set(self, other)) {
+    if (Watcher_CannotSet((Watcher *)self) ||
+        !PyArg_ParseTuple(args, "O!:set", &Loop_Type, &other) ||
+        __Embed_Set(self, other)) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -77,15 +164,10 @@ Embed_set(Embed *self, PyObject *args)
 
 
 /* Embed.sweep() */
-PyDoc_STRVAR(Embed_sweep_doc,
-"sweep()");
-
 static PyObject *
-Embed_sweep(Embed *self)
+Embed_sweep(Watcher *self)
 {
-    _Watcher *_watcher = (_Watcher *)self;
-
-    ev_embed_sweep(_watcher->loop->loop, (ev_embed *)_watcher->watcher);
+    ev_embed_sweep(self->loop->loop, (ev_embed *)self->watcher);
     if (PyErr_Occurred()) {
         return NULL;
     }
@@ -93,100 +175,72 @@ Embed_sweep(Embed *self)
 }
 
 
-/* EmbedType.tp_methods */
+/* Embed_Type.tp_methods */
 static PyMethodDef Embed_tp_methods[] = {
-    {"set", (PyCFunction)Embed_set,
-     METH_VARARGS, Embed_set_doc},
-    {"sweep", (PyCFunction)Embed_sweep,
-     METH_NOARGS, Embed_sweep_doc},
+    {"set", (PyCFunction)Embed_set, METH_VARARGS,
+     "set(other)"},
+    {"sweep", (PyCFunction)Embed_sweep, METH_NOARGS,
+     "sweep()"},
     {NULL}  /* Sentinel */
 };
 
 
 /* Embed.other */
 static PyObject *
-Embed_other_get(Embed *self, void *closure)
+Embed_other_getter(Embed *self, void *closure)
 {
-    _Py_RETURN_OBJECT(self->other);
+    return __Py_INCREF((PyObject *)self->other);
 }
 
 
-/* EmbedType.tp_getsets */
+/* Embed_Type.tp_getsets */
 static PyGetSetDef Embed_tp_getsets[] = {
-    {"other", (getter)Embed_other_get,
-     _Readonly_attribute_set, NULL, NULL},
+    {"other", (getter)Embed_other_getter,
+     _Py_READONLY_ATTRIBUTE, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
 
-/* EmbedType.tp_init */
-static int
-Embed_tp_init(Embed *self, PyObject *args, PyObject *kwargs)
+PyTypeObject Embed_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "mood.event.Embed",
+    .tp_basicsize = sizeof(Embed),
+    .tp_dealloc = (destructor)Embed_tp_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .tp_doc = "Embed(other, loop[, callback=None, data=None, priority=0])",
+    .tp_traverse = (traverseproc)Embed_tp_traverse,
+    .tp_clear = (inquiry)Embed_tp_clear,
+    .tp_methods = Embed_tp_methods,
+    .tp_getset = Embed_tp_getsets,
+    .tp_init = (initproc)Embed_tp_init,
+    .tp_new = Embed_tp_new,
+};
+
+
+/* interface ---------------------------------------------------------------- */
+
+Embed *
+Embed_New(Loop *loop, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {"other",
-                             "loop", "callback", "data", "priority", NULL};
-    Loop *other, *loop;
+                             "callback", "data", "priority", NULL};
+
+    Loop *other = NULL;
     PyObject *callback = Py_None, *data = Py_None;
     int priority = 0;
+    Embed *self = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!|OOi:__init__", kwlist,
-            &LoopType, &other,
-            &LoopType, &loop, &callback, &data, &priority)) {
-        return -1;
+    if (PyArg_ParseTupleAndKeywords(args, kwargs, "O!|OOi:embed", kwlist,
+            &Loop_Type, &other,
+            &callback, &data, &priority) &&
+        (self = __Embed_New(&Embed_Type)) &&
+        (Watcher_Init((Watcher *)self, loop, callback, data, priority) ||
+         __Embed_Set(self, other))) {
+        Py_CLEAR(self);
     }
-    if (__Watcher_Init((_Watcher *)self, loop, callback, data, priority)) {
-        return -1;
-    }
-    return _Embed_Set(self, other);
+    return self;
 }
 
 
-/* EmbedType.tp_new */
-static PyObject *
-Embed_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    return __Watcher_New(type, EV_EMBED, sizeof(ev_embed));
-}
+#endif // !EV_EMBED_ENABLE
 
-
-/* EmbedType */
-static PyTypeObject EmbedType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "mood.event.Embed",                       /*tp_name*/
-    sizeof(Embed),                            /*tp_basicsize*/
-    0,                                        /*tp_itemsize*/
-    (destructor)Embed_tp_dealloc,             /*tp_dealloc*/
-    0,                                        /*tp_print*/
-    0,                                        /*tp_getattr*/
-    0,                                        /*tp_setattr*/
-    0,                                        /*tp_compare*/
-    0,                                        /*tp_repr*/
-    0,                                        /*tp_as_number*/
-    0,                                        /*tp_as_sequence*/
-    0,                                        /*tp_as_mapping*/
-    0,                                        /*tp_hash */
-    0,                                        /*tp_call*/
-    0,                                        /*tp_str*/
-    0,                                        /*tp_getattro*/
-    0,                                        /*tp_setattro*/
-    0,                                        /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE, /*tp_flags*/
-    Embed_tp_doc,                             /*tp_doc*/
-    (traverseproc)Embed_tp_traverse,          /*tp_traverse*/
-    (inquiry)Embed_tp_clear,                  /*tp_clear*/
-    0,                                        /*tp_richcompare*/
-    0,                                        /*tp_weaklistoffset*/
-    0,                                        /*tp_iter*/
-    0,                                        /*tp_iternext*/
-    Embed_tp_methods,                         /*tp_methods*/
-    0,                                        /*tp_members*/
-    Embed_tp_getsets,                         /*tp_getsets*/
-    0,                                        /*tp_base*/
-    0,                                        /*tp_dict*/
-    0,                                        /*tp_descr_get*/
-    0,                                        /*tp_descr_set*/
-    0,                                        /*tp_dictoffset*/
-    (initproc)Embed_tp_init,                  /*tp_init*/
-    0,                                        /*tp_alloc*/
-    Embed_tp_new,                             /*tp_new*/
-};

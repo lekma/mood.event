@@ -95,7 +95,9 @@
         new loop in the child, you don't have to call it at all.
 
 
-    .. py:method:: now
+    .. py:method:: now([update])
+
+        :param bool update: defaults to ``False``.
 
         :rtype: float
 
@@ -105,13 +107,11 @@
         base time used for relative timers. You can treat it as the timestamp of
         the event occurring (or more correctly, libev finding out about it).
 
-
-    .. py:method:: update
-
-        Establishes the current time by querying the kernel, updating the time
-        returned by :py:meth:`now` in the process. This is a costly operation
-        and is usually done automatically within the loop.
-        This method is rarely useful, but when some event callback runs for a
+        When *update* is provided and ``True``, establishes the current time by
+        querying the kernel, updating the time returned by :py:meth:`now` in the
+        process. This is a costly operation and is usually done automatically
+        within the loop.
+        This parameter is rarely useful, but when some event callback runs for a
         very long time without entering the event loop, updating libev's idea of
         the current time is a good idea.
 
@@ -148,26 +148,26 @@
             updating the event loop time (see :py:meth:`update`).
 
 
-    .. py:method:: unref
-                   ref
+    .. py:method:: decref
+                   incref
 
-        :py:meth:`unref`/:py:meth:`ref` can be used to add or remove a reference
-        count on the event loop: every watcher keeps one reference, and as long
-        as the reference count is nonzero, the loop will not return on its own.
-        This is useful when you have a watcher that you never intend to
-        unregister, but that nevertheless should not keep the loop from
-        returning. In such a case, call :py:meth:`unref` after starting, and
-        :py:meth:`ref` before stopping it.
+        :py:meth:`decref`/:py:meth:`incref` can be used to add or remove a
+        reference count on the event loop: every watcher keeps one reference,
+        and as long as the reference count is nonzero, the loop will not return
+        on its own. This is useful when you have a watcher that you never intend
+        to unregister, but that nevertheless should not keep the loop from
+        returning. In such a case, call :py:meth:`decref` after starting, and
+        :py:meth:`incref` before stopping it.
         As an example, libev itself uses this for its internal signal pipe: it
         is not visible to the user and should not keep the loop from exiting if
         no event watchers registered by it are active. It is also an excellent
         way to do this for generic recurring timers or from within third-party
         libraries.
-        Just remember to :py:meth:`unref` after start and :py:meth:`ref` before
-        stop (but only if the watcher wasn't active before, or was active
+        Just remember to :py:meth:`decref` after start and :py:meth:`incref`
+        before stop (but only if the watcher wasn't active before, or was active
         before, respectively. Note also that libev might stop watchers itself
-        (e.g. non-repeating timers) in which case you have to :py:meth:`ref` in
-        the callback).
+        (e.g. non-repeating timers) in which case you have to :py:meth:`incref`
+        in the callback).
 
         .. note::
 
@@ -313,62 +313,62 @@
     instantiate watchers directly attached to the loop (although they do not
     take keyword arguments):
 
-    .. py:method:: io(fd, events, callback[, data, priority])
+    .. py:method:: io(fd, events, callback[, data=None, priority=0])
 
         :rtype: :py:class:`Io`
 
 
-    .. py:method:: timer(after, repeat, callback[, data, priority])
+    .. py:method:: timer(after, repeat, callback[, data=None, priority=0])
 
         :rtype: :py:class:`Timer`
 
 
-    .. py:method:: periodic(offset, interval, callback[, data, priority])
+    .. py:method:: periodic(offset, interval, callback[, data=None, priority=0])
 
         :rtype: :py:class:`Periodic`
 
 
-    .. py:method:: scheduler(reschedule, callback[, data, priority])
+    .. py:method:: scheduler(reschedule, callback[, data=None, priority=0])
 
         :rtype: :py:class:`Scheduler`
 
 
-    .. py:method:: signal(signum, callback[, data, priority])
+    .. py:method:: signal(signum, callback[, data=None, priority=0])
 
         :rtype: :py:class:`Signal`
 
 
-    .. py:method:: child(pid, trace, callback[, data, priority])
+    .. py:method:: child(pid, trace, callback[, data=None, priority=0])
 
         :rtype: :py:class:`Child`
 
 
-    .. py:method:: idle(callback[, data, priority])
+    .. py:method:: idle(callback[, data=None, priority=0])
 
         :rtype: :py:class:`Idle`
 
 
-    .. py:method:: prepare(callback[, data, priority])
+    .. py:method:: prepare(callback[, data=None, priority=0])
 
         :rtype: :py:class:`Prepare`
 
 
-    .. py:method:: check(callback[, data, priority])
+    .. py:method:: check(callback[, data=None, priority=0])
 
         :rtype: :py:class:`Check`
 
 
-    .. py:method:: embed(other[, callback, data, priority])
+    .. py:method:: embed(other[, callback=None, data=None, priority=0])
 
         :rtype: :py:class:`Embed`
 
 
-    .. py:method:: fork(callback[, data, priority])
+    .. py:method:: fork(callback[, data=None, priority=0])
 
         :rtype: :py:class:`Fork`
 
 
-    .. py:method:: async(callback[, data, priority])
+    .. py:method:: async(callback[, data=None, priority=0])
 
         :rtype: :py:class:`Async`
 

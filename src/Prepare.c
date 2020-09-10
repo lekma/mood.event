@@ -1,58 +1,82 @@
-/* ----------------------------------------------------------------------------
- PrepareType
- ---------------------------------------------------------------------------- */
+/*
+#
+# Copyright © 2020 Malek Hadj-Ali
+# All rights reserved.
+#
+# This file is part of mood.
+#
+# mood is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3
+# as published by the Free Software Foundation.
+#
+# mood is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with mood.  If not, see <http://www.gnu.org/licenses/>.
+#
+*/
 
-/* PrepareType.tp_doc */
-PyDoc_STRVAR(Prepare_tp_doc,
-"Prepare(loop, callback[, data=None, priority=0])");
+
+#include "event.h"
 
 
-/* PrepareType.tp_new */
-static PyObject *
-Prepare_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+#if EV_PREPARE_ENABLE
+
+
+/* --------------------------------------------------------------------------
+   Prepare
+   -------------------------------------------------------------------------- */
+
+static inline Watcher *
+__Prepare_New(PyTypeObject *type)
 {
-    return __Watcher_New(type, EV_PREPARE, sizeof(ev_prepare));
+    return Watcher_New(type, EV_PREPARE, sizeof(ev_prepare));
 }
 
 
-/* PrepareType */
-static PyTypeObject PrepareType = {
+/* Prepare_Type ------------------------------------------------------------- */
+
+/* Prepare_Type.tp_new */
+static PyObject *
+Prepare_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return (PyObject *)__Prepare_New(type);
+}
+
+
+PyTypeObject Prepare_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "mood.event.Prepare",                     /*tp_name*/
-    sizeof(_Watcher),                         /*tp_basicsize*/
-    0,                                        /*tp_itemsize*/
-    0,                                        /*tp_dealloc*/
-    0,                                        /*tp_print*/
-    0,                                        /*tp_getattr*/
-    0,                                        /*tp_setattr*/
-    0,                                        /*tp_compare*/
-    0,                                        /*tp_repr*/
-    0,                                        /*tp_as_number*/
-    0,                                        /*tp_as_sequence*/
-    0,                                        /*tp_as_mapping*/
-    0,                                        /*tp_hash */
-    0,                                        /*tp_call*/
-    0,                                        /*tp_str*/
-    0,                                        /*tp_getattro*/
-    0,                                        /*tp_setattro*/
-    0,                                        /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_FINALIZE, /*tp_flags*/
-    Prepare_tp_doc,                           /*tp_doc*/
-    0,                                        /*tp_traverse*/
-    0,                                        /*tp_clear*/
-    0,                                        /*tp_richcompare*/
-    0,                                        /*tp_weaklistoffset*/
-    0,                                        /*tp_iter*/
-    0,                                        /*tp_iternext*/
-    0,                                        /*tp_methods*/
-    0,                                        /*tp_members*/
-    0,                                        /*tp_getsets*/
-    0,                                        /*tp_base*/
-    0,                                        /*tp_dict*/
-    0,                                        /*tp_descr_get*/
-    0,                                        /*tp_descr_set*/
-    0,                                        /*tp_dictoffset*/
-    0,                                        /*tp_init*/
-    0,                                        /*tp_alloc*/
-    Prepare_tp_new,                           /*tp_new*/
+    .tp_name = "mood.event.Prepare",
+    .tp_basicsize = sizeof(Watcher),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_doc = "Prepare(loop, callback[, data=None, priority=0])",
+    .tp_new = Prepare_tp_new,
 };
+
+
+/* interface ---------------------------------------------------------------- */
+
+Watcher *
+Prepare_New(Loop *loop, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"callback", "data", "priority", NULL};
+
+    PyObject *callback = NULL, *data = Py_None;
+    int priority = 0;
+    Watcher *self = NULL;
+
+    if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|Oi:prepare", kwlist,
+            &callback, &data, &priority) &&
+        (self = __Prepare_New(&Prepare_Type)) &&
+        Watcher_Init(self, loop, callback, data, priority)) {
+        Py_CLEAR(self);
+    }
+    return self;
+}
+
+
+#endif // !EV_PREPARE_ENABLE
+

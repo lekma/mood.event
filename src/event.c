@@ -20,225 +20,40 @@
 */
 
 
-#define PY_SSIZE_T_CLEAN
-#include "Python.h"
-
-#include "helpers/helpers.c"
-
-#include <ev.h>
+#include "event.h"
 
 
-/* ----------------------------------------------------------------------------
- helpers
- ---------------------------------------------------------------------------- */
+/* global objects */
 
-#define _Py_CHECK_CALLABLE(cb, r) \
-    do { \
-        if (!PyCallable_Check((cb))) { \
-            PyErr_SetString(PyExc_TypeError, "a callable is required"); \
-            return (r); \
-        } \
-    } while (0)
-
-#define _Py_CHECK_CALLABLE_OR_NONE(cb, r) \
-    do { \
-        if ((cb) != Py_None && !PyCallable_Check((cb))) { \
-            PyErr_SetString(PyExc_TypeError, "a callable or None is required"); \
-            return (r); \
-        } \
-    } while (0)
-
-#define _Py_CHECK_POSITIVE_OR_ZERO_FLOAT(v, r) \
-    do { \
-        if ((v) < 0.0) { \
-            PyErr_SetString(PyExc_ValueError, \
-                            "a positive float or 0.0 is required"); \
-            return (r); \
-        } \
-    } while (0)
-
-#define _Py_CHECK_INT_ATTRIBUTE(v, r) \
-    do { \
-        if ((v) == -1 && PyErr_Occurred()) { \
-            return (r); \
-        } \
-        else if ((v) > INT_MAX) { \
-            PyErr_SetString(PyExc_OverflowError, \
-                            "signed integer is greater than maximum"); \
-            return (r); \
-        } \
-        else if ((v) < INT_MIN) { \
-            PyErr_SetString(PyExc_OverflowError, \
-                            "signed integer is less than minimum"); \
-            return (r); \
-        } \
-    } while (0)
+PyObject *Error = NULL;
+PyObject *DefaultLoop = NULL;
 
 
-#define _Py_PROTECTED_ATTRIBUTE(v, r) \
-    do { \
-        if ((v) == NULL) { \
-            PyErr_SetString(PyExc_TypeError, "cannot delete attribute"); \
-            return (r); \
-        } \
-    } while (0)
+/* helpers ------------------------------------------------------------------ */
 
-static int
-_Readonly_attribute_set(PyObject *self, PyObject *value, void *closure)
+int
+_Py_INVOKE_VERIFY(PyObject *callback, const char *alt)
 {
-    _Py_PROTECTED_ATTRIBUTE(value, -1);
-    PyErr_SetString(PyExc_AttributeError, "readonly attribute");
-    return -1;
+    PyObject *exc_type, *exc_value, *exc_traceback;
+    PyObject *repr = NULL;
+
+    if (PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_Exception)) {
+            if (callback && (callback != Py_None)) {
+                PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
+                repr = PyObject_Repr(callback);
+                _PyErr_ChainExceptions(exc_type, exc_value, exc_traceback);
+            }
+            _PyErr_FormatFromCause(
+                PyExc_SystemError, "trying to invoke %V with an error set",
+                repr, alt ? alt : "a callback");
+            Py_XDECREF(repr);
+        }
+        return -1;
+    }
+    return 0;
 }
 
-
-/* ----------------------------------------------------------------------------
- objects
- ---------------------------------------------------------------------------- */
-
-static PyObject *Error = NULL;
-static PyObject *DefaultLoop = NULL;
-
-
-/* Loop */
-typedef struct {
-    PyObject_HEAD
-    struct ev_loop *loop;
-    PyObject *callback;
-    PyObject *data;
-    double io_ival;
-    double timeout_ival;
-} Loop;
-
-
-/* _Watcher base - not exposed */
-typedef struct {
-    PyObject_HEAD
-    int ev_type;
-    ev_watcher *watcher;
-    Loop *loop;
-    PyObject *callback;
-    PyObject *data;
-} _Watcher;
-
-
-/* fwd declarations */
-static PyTypeObject LoopType;
-static PyTypeObject IoType;
-static PyTypeObject TimerType;
-
-#if EV_PERIODIC_ENABLE
-static PyTypeObject PeriodicType;
-#if EV_PREPARE_ENABLE
-/* Scheduler */
-typedef struct {
-    _Watcher _watcher;
-    ev_prepare *prepare;
-    PyObject *reschedule;
-    PyObject *err_type;
-    PyObject *err_value;
-    PyObject *err_traceback;
-    int err_fatal;
-} Scheduler;
-static PyTypeObject SchedulerType;
-#endif
-#endif
-
-#if EV_SIGNAL_ENABLE
-static PyTypeObject SignalType;
-#endif
-
-#if EV_CHILD_ENABLE
-static PyTypeObject ChildType;
-#endif
-
-#if EV_IDLE_ENABLE
-static PyTypeObject IdleType;
-#endif
-
-#if EV_PREPARE_ENABLE
-static PyTypeObject PrepareType;
-#endif
-
-#if EV_CHECK_ENABLE
-static PyTypeObject CheckType;
-#endif
-
-#if EV_EMBED_ENABLE
-/* Embed */
-typedef struct {
-    _Watcher _watcher;
-    Loop *other;
-} Embed;
-static PyTypeObject EmbedType;
-#endif
-
-#if EV_FORK_ENABLE
-static PyTypeObject ForkType;
-#endif
-
-#if EV_ASYNC_ENABLE
-static PyTypeObject AsyncType;
-#endif
-
-
-/* ----------------------------------------------------------------------------
- types
- ---------------------------------------------------------------------------- */
-
-/*
-XXX: yeah, I know. But it makes my life so much easier and
-     the size of the resulting module is so much smaller ¯\_(ツ)_/¯
-*/
-
-#include "Loop.c"
-#include "_Watcher.c"
-#include "Io.c"
-#include "Timer.c"
-
-#if EV_PERIODIC_ENABLE
-#include "Periodic.c"
-#if EV_PREPARE_ENABLE
-#include "Scheduler.c"
-#endif
-#endif
-
-#if EV_SIGNAL_ENABLE
-#include "Signal.c"
-#endif
-
-#if EV_CHILD_ENABLE
-#include "Child.c"
-#endif
-
-#if EV_IDLE_ENABLE
-#include "Idle.c"
-#endif
-
-#if EV_PREPARE_ENABLE
-#include "Prepare.c"
-#endif
-
-#if EV_CHECK_ENABLE
-#include "Check.c"
-#endif
-
-#if EV_EMBED_ENABLE
-#include "Embed.c"
-#endif
-
-#if EV_FORK_ENABLE
-#include "Fork.c"
-#endif
-
-#if EV_ASYNC_ENABLE
-#include "Async.c"
-#endif
-
-
-/* ----------------------------------------------------------------------------
- libev global callbacks
- ---------------------------------------------------------------------------- */
 
 /* allocate memory from the Python heap */
 static void *
@@ -246,44 +61,30 @@ event_allocator(void *ptr, long size)
 {
     void *result = NULL;
 
-    if (size || ptr) {
-        // since https://hg.python.org/cpython/rev/ca78c974e938
-        // the GIL is always needed
-        PyGILState_STATE gstate = PyGILState_Ensure();
-        if (size) {
-            result = PyObject_Realloc(ptr, size);
-        }
-        else {
-            PyObject_Free(ptr);
-        }
-        PyGILState_Release(gstate);
+    // since https://hg.python.org/cpython/rev/ca78c974e938
+    // the GIL is always needed
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    if (size) {
+        result = PyMem_Realloc(ptr, size);
     }
+    else {
+        PyMem_Free(ptr);
+    }
+    PyGILState_Release(gstate);
     return result;
 }
 
-#define event_syserr_cb Py_FatalError
 
+/* --------------------------------------------------------------------------
+   module
+   -------------------------------------------------------------------------- */
 
-/* ----------------------------------------------------------------------------
- module
- ---------------------------------------------------------------------------- */
-
-/* event_def.m_doc */
-PyDoc_STRVAR(event_m_doc,
-"Python libev interface");
-
-
-/* event.default_loop([flags=EVFLAG_AUTO, callback=None, data=None,
-                       io_interval=0.0, timeout_interval=0.0]) -> 'default loop' */
-PyDoc_STRVAR(event_default_loop_doc,
-"default_loop([flags=EVFLAG_AUTO, callback=None, data=None,\n\
-               io_interval=0.0, timeout_interval=0.0]) -> 'default loop'");
-
+/* event.loop([flags=EVFLAG_AUTO, callback=None, data=None, io_interval=0.0, timeout_interval=0.0]) -> 'default loop' */
 static PyObject *
-event_default_loop(PyObject *module, PyObject *args, PyObject *kwargs)
+event_loop(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     if (!DefaultLoop) {
-        DefaultLoop = _Loop_New(args, kwargs, 1);
+        DefaultLoop = Loop_New(args, kwargs, 1);
     }
     else {
         if (PyErr_WarnEx(PyExc_RuntimeWarning,
@@ -297,26 +98,22 @@ event_default_loop(PyObject *module, PyObject *args, PyObject *kwargs)
 }
 
 
-/* event.fatal */
-PyDoc_STRVAR(event_fatal_doc,
-"fatal decorator");
-
+/* event.fatal() */
 static PyObject *
-event_fatal(PyObject *module, PyObject *obj)
+event_fatal(PyObject *module, PyObject *args)
 {
     _Py_IDENTIFIER(__err_fatal__);
+    PyObject *obj;
 
-    if (_PyObject_SetAttrId(obj, &PyId___err_fatal__, Py_True)) {
+    if (!PyArg_ParseTuple(args, "O:fatal", &obj) ||
+        _PyObject_SetAttrId(obj, &PyId___err_fatal__, Py_True)) {
         return NULL;
     }
-    _Py_RETURN_OBJECT(obj);
+    return __Py_INCREF(obj);
 }
 
 
 /* event.time() -> float */
-PyDoc_STRVAR(event_time_doc,
-"time() -> float");
-
 static PyObject *
 event_time(PyObject *module)
 {
@@ -325,18 +122,16 @@ event_time(PyObject *module)
 
 
 /* event.sleep(interval) */
-PyDoc_STRVAR(event_sleep_doc,
-"sleep(interval)");
-
 static PyObject *
 event_sleep(PyObject *module, PyObject *args)
 {
+    static const double day = 86400.0;
     double interval;
 
     if (!PyArg_ParseTuple(args, "d:sleep", &interval)) {
         return NULL;
     }
-    if (interval > 86400.0 &&
+    if (interval > day &&
         PyErr_WarnEx(PyExc_RuntimeWarning,
                      "'interval' bigger than a day (86400.0), "
                      "this is not garanteed to work", 1)) {
@@ -353,9 +148,6 @@ event_sleep(PyObject *module, PyObject *args)
 
 
 /* event.abi_version() -> (int, int) */
-PyDoc_STRVAR(event_abi_version_doc,
-"abi_version() -> (int, int)");
-
 static PyObject *
 event_abi_version(PyObject *module)
 {
@@ -364,9 +156,6 @@ event_abi_version(PyObject *module)
 
 
 /* event.supported_backends() -> int */
-PyDoc_STRVAR(event_supported_backends_doc,
-"supported_backends() -> int");
-
 static PyObject *
 event_supported_backends(PyObject *module)
 {
@@ -375,9 +164,6 @@ event_supported_backends(PyObject *module)
 
 
 /* event.recommended_backends() -> int */
-PyDoc_STRVAR(event_recommended_backends_doc,
-"recommended_backends() -> int");
-
 static PyObject *
 event_recommended_backends(PyObject *module)
 {
@@ -386,9 +172,6 @@ event_recommended_backends(PyObject *module)
 
 
 /* event.embeddable_backends() -> int */
-PyDoc_STRVAR(event_embeddable_backends_doc,
-"embeddable_backends() -> int");
-
 static PyObject *
 event_embeddable_backends(PyObject *module)
 {
@@ -398,9 +181,6 @@ event_embeddable_backends(PyObject *module)
 
 #if EV_SIGNAL_ENABLE
 /* event.feed_signal(signum) */
-PyDoc_STRVAR(event_feed_signal_doc,
-"feed_signal(signum)");
-
 static PyObject *
 event_feed_signal(PyObject *module, PyObject *args)
 {
@@ -417,25 +197,25 @@ event_feed_signal(PyObject *module, PyObject *args)
 
 /* event_def.m_methods */
 static PyMethodDef event_m_methods[] = {
-    {"default_loop", (PyCFunction)event_default_loop,
-     METH_VARARGS | METH_KEYWORDS, event_default_loop_doc},
-    {"fatal", (PyCFunction)event_fatal,
-     METH_O, event_fatal_doc},
-    {"time", (PyCFunction)event_time,
-     METH_NOARGS, event_time_doc},
-    {"sleep", (PyCFunction)event_sleep,
-     METH_VARARGS, event_sleep_doc},
-    {"abi_version", (PyCFunction)event_abi_version,
-     METH_NOARGS, event_abi_version_doc},
-    {"supported_backends", (PyCFunction)event_supported_backends,
-     METH_NOARGS, event_supported_backends_doc},
-    {"recommended_backends", (PyCFunction)event_recommended_backends,
-     METH_NOARGS, event_recommended_backends_doc},
-    {"embeddable_backends", (PyCFunction)event_embeddable_backends,
-     METH_NOARGS, event_embeddable_backends_doc},
+    {"loop", (PyCFunction)event_loop, METH_VARARGS | METH_KEYWORDS,
+     "loop([flags=EVFLAG_AUTO, callback=None, data=None, io_interval=0.0, timeout_interval=0.0]) -> 'default loop'"},
+    {"fatal", (PyCFunction)event_fatal, METH_VARARGS,
+     "fatal decorator"},
+    {"time", (PyCFunction)event_time, METH_NOARGS,
+     "time() -> float"},
+    {"sleep", (PyCFunction)event_sleep, METH_VARARGS,
+     "sleep(interval)"},
+    {"abi_version", (PyCFunction)event_abi_version, METH_NOARGS,
+     "abi_version() -> (int, int)"},
+    {"supported_backends", (PyCFunction)event_supported_backends, METH_NOARGS,
+     "supported_backends() -> int"},
+    {"recommended_backends", (PyCFunction)event_recommended_backends, METH_NOARGS,
+     "recommended_backends() -> int"},
+    {"embeddable_backends", (PyCFunction)event_embeddable_backends, METH_NOARGS,
+     "embeddable_backends() -> int"},
 #if EV_SIGNAL_ENABLE
-    {"feed_signal", (PyCFunction)event_feed_signal,
-     METH_VARARGS, event_feed_signal_doc},
+    {"feed_signal", (PyCFunction)event_feed_signal, METH_VARARGS,
+     "feed_signal(signum)"},
 #endif
     {NULL} /* Sentinel */
 };
@@ -472,15 +252,130 @@ event_m_free(PyObject *module)
    because there can be only one DefaultLoop per process */
 static PyModuleDef event_def = {
     PyModuleDef_HEAD_INIT,
-    "event",                                  /* m_name */
-    event_m_doc,                              /* m_doc */
-    -1,                                       /* m_size */
-    event_m_methods,                          /* m_methods */
-    NULL,                                     /* m_slots */
-    (traverseproc)event_m_traverse,           /* m_traverse */
-    (inquiry)event_m_clear,                   /* m_clear */
-    (freefunc)event_m_free                    /* m_free */
+    .m_name = "event",
+    .m_doc = "Python libev interface",
+    .m_size = -1,
+    .m_methods = event_m_methods,
+    .m_traverse = (traverseproc)event_m_traverse,
+    .m_clear = (inquiry)event_m_clear,
+    .m_free = (freefunc)event_m_free,
 };
+
+
+static inline int
+_module_init(PyObject *module)
+{
+    if (
+        PyModule_AddStringConstant(module, "__version__", PKG_VERSION) ||
+        _PyModule_AddNewException(module, "Error", "mood.event", NULL, NULL, &Error) ||
+
+        // Loop
+        _PyModule_AddType(module, "Loop", &Loop_Type) ||
+        _PyModule_AddUnsignedIntMacro(module, EVFLAG_AUTO) ||
+        _PyModule_AddUnsignedIntMacro(module, EVFLAG_NOENV) ||
+        _PyModule_AddUnsignedIntMacro(module, EVFLAG_FORKCHECK) ||
+        _PyModule_AddUnsignedIntMacro(module, EVFLAG_SIGNALFD) ||
+        _PyModule_AddUnsignedIntMacro(module, EVFLAG_NOSIGMASK) ||
+        _PyModule_AddUnsignedIntMacro(module, EVFLAG_NOTIMERFD) ||
+        _PyModule_AddUnsignedIntMacro(module, EVBACKEND_SELECT) ||
+        _PyModule_AddUnsignedIntMacro(module, EVBACKEND_POLL) ||
+        _PyModule_AddUnsignedIntMacro(module, EVBACKEND_EPOLL) ||
+        _PyModule_AddUnsignedIntMacro(module, EVBACKEND_KQUEUE) ||
+        _PyModule_AddUnsignedIntMacro(module, EVBACKEND_DEVPOLL) ||
+        _PyModule_AddUnsignedIntMacro(module, EVBACKEND_PORT) ||
+        _PyModule_AddUnsignedIntMacro(module, EVBACKEND_LINUXAIO) ||
+        _PyModule_AddUnsignedIntMacro(module, EVBACKEND_IOURING) ||
+        _PyModule_AddUnsignedIntMacro(module, EVBACKEND_ALL) ||
+        _PyModule_AddUnsignedIntMacro(module, EVBACKEND_MASK) ||
+        _PyModule_AddIntMacro(module, EVRUN_NOWAIT) ||
+        _PyModule_AddIntMacro(module, EVRUN_ONCE) ||
+        _PyModule_AddIntMacro(module, EVBREAK_ONE) ||
+        _PyModule_AddIntMacro(module, EVBREAK_ALL) ||
+
+        // Watcher
+        PyType_Ready(&Watcher_Type) ||
+        _PyModule_AddIntMacro(module, EV_MINPRI) ||
+        _PyModule_AddIntMacro(module, EV_MAXPRI) ||
+
+        // Io
+        _PyModule_AddTypeWithBase(module, "Io", &Io_Type, &Watcher_Type) ||
+        _PyModule_AddIntMacro(module, EV_READ) ||
+        _PyModule_AddIntMacro(module, EV_WRITE) ||
+        _PyModule_AddIntMacro(module, EV_IO) ||
+
+        // Timer
+        _PyModule_AddTypeWithBase(module, "Timer", &Timer_Type, &Watcher_Type) ||
+        _PyModule_AddIntMacro(module, EV_TIMER) ||
+
+#if EV_PERIODIC_ENABLE
+        // Periodic
+        _PyModule_AddTypeWithBase(module, "Periodic", &Periodic_Type, &Watcher_Type) ||
+#if EV_PREPARE_ENABLE
+        // Scheduler
+        _PyModule_AddTypeWithBase(module, "Scheduler", &Scheduler_Type, &Watcher_Type) ||
+#endif
+        _PyModule_AddIntMacro(module, EV_PERIODIC) ||
+#endif
+
+#if EV_SIGNAL_ENABLE
+        // Signal
+        _PyModule_AddTypeWithBase(module, "Signal", &Signal_Type, &Watcher_Type) ||
+        _PyModule_AddIntMacro(module, EV_SIGNAL) ||
+#endif
+
+#if EV_CHILD_ENABLE
+        // Child
+        _PyModule_AddTypeWithBase(module, "Child", &Child_Type, &Watcher_Type) ||
+        _PyModule_AddIntMacro(module, EV_CHILD) ||
+#endif
+
+#if EV_IDLE_ENABLE
+        // Idle
+        _PyModule_AddTypeWithBase(module, "Idle", &Idle_Type, &Watcher_Type) ||
+        _PyModule_AddIntMacro(module, EV_IDLE) ||
+#endif
+
+#if EV_PREPARE_ENABLE
+        // Prepare
+        _PyModule_AddTypeWithBase(module, "Prepare", &Prepare_Type, &Watcher_Type) ||
+        _PyModule_AddIntMacro(module, EV_PREPARE) ||
+#endif
+
+#if EV_CHECK_ENABLE
+        // Check
+        _PyModule_AddTypeWithBase(module, "Check", &Check_Type, &Watcher_Type) ||
+        _PyModule_AddIntMacro(module, EV_CHECK) ||
+#endif
+
+#if EV_EMBED_ENABLE
+        // Embed
+        _PyModule_AddTypeWithBase(module, "Embed", &Embed_Type, &Watcher_Type) ||
+        _PyModule_AddIntMacro(module, EV_EMBED) ||
+#endif
+
+#if EV_FORK_ENABLE
+        // Fork
+        _PyModule_AddTypeWithBase(module, "Fork", &Fork_Type, &Watcher_Type) ||
+        _PyModule_AddIntMacro(module, EV_FORK) ||
+#endif
+
+#if EV_ASYNC_ENABLE
+        // Async
+        _PyModule_AddTypeWithBase(module, "Async", &Async_Type, &Watcher_Type) ||
+        _PyModule_AddIntMacro(module, EV_ASYNC) ||
+#endif
+
+        // additional events
+        _PyModule_AddIntMacro(module, EV_CUSTOM) ||
+        _PyModule_AddIntMacro(module, EV_ERROR)
+       ) {
+        return -1;
+    }
+    // setup libev
+    ev_set_allocator(event_allocator);
+    ev_set_syserr_cb(Py_FatalError);
+    return 0;
+}
 
 
 /* module initialization */
@@ -489,130 +384,11 @@ PyInit_event(void)
 {
     PyObject *module = NULL;
 
-    if ((module = PyModule_Create(&event_def))) {
-        if (
-            PyModule_AddStringConstant(module, "__version__", PKG_VERSION) ||
-            _PyModule_AddNewException(module, "Error", "mood.event", NULL, NULL, &Error) ||
-
-            // Loop
-            _PyModule_AddType(module, "Loop", &LoopType) ||
-            _PyModule_AddUnsignedIntMacro(module, EVFLAG_AUTO) ||
-            _PyModule_AddUnsignedIntMacro(module, EVFLAG_NOENV) ||
-            _PyModule_AddUnsignedIntMacro(module, EVFLAG_FORKCHECK) ||
-            _PyModule_AddUnsignedIntMacro(module, EVFLAG_SIGNALFD) ||
-            _PyModule_AddUnsignedIntMacro(module, EVFLAG_NOSIGMASK) ||
-            _PyModule_AddUnsignedIntMacro(module, EVFLAG_NOTIMERFD) ||
-            _PyModule_AddUnsignedIntMacro(module, EVBACKEND_SELECT) ||
-            _PyModule_AddUnsignedIntMacro(module, EVBACKEND_POLL) ||
-            _PyModule_AddUnsignedIntMacro(module, EVBACKEND_EPOLL) ||
-            _PyModule_AddUnsignedIntMacro(module, EVBACKEND_KQUEUE) ||
-            _PyModule_AddUnsignedIntMacro(module, EVBACKEND_DEVPOLL) ||
-            _PyModule_AddUnsignedIntMacro(module, EVBACKEND_PORT) ||
-            _PyModule_AddUnsignedIntMacro(module, EVBACKEND_LINUXAIO) ||
-            _PyModule_AddUnsignedIntMacro(module, EVBACKEND_IOURING) ||
-            _PyModule_AddUnsignedIntMacro(module, EVBACKEND_ALL) ||
-            _PyModule_AddUnsignedIntMacro(module, EVBACKEND_MASK) ||
-            _PyModule_AddIntMacro(module, EVRUN_NOWAIT) ||
-            _PyModule_AddIntMacro(module, EVRUN_ONCE) ||
-            _PyModule_AddIntMacro(module, EVBREAK_ONE) ||
-            _PyModule_AddIntMacro(module, EVBREAK_ALL) ||
-
-            // _Watcher
-            PyType_Ready(&_WatcherType) ||
-            _PyModule_AddIntMacro(module, EV_MINPRI) ||
-            _PyModule_AddIntMacro(module, EV_MAXPRI) ||
-
-            // Io
-            _PyModule_AddTypeWithBase(module, "Io",
-                                      &IoType, &_WatcherType) ||
-            _PyModule_AddIntMacro(module, EV_READ) ||
-            _PyModule_AddIntMacro(module, EV_WRITE) ||
-            _PyModule_AddIntMacro(module, EV_IO) ||
-
-            // Timer
-            _PyModule_AddTypeWithBase(module, "Timer",
-                                      &TimerType, &_WatcherType) ||
-            _PyModule_AddIntMacro(module, EV_TIMER) ||
-
-#if EV_PERIODIC_ENABLE
-            // Periodic
-            _PyModule_AddTypeWithBase(module, "Periodic",
-                                      &PeriodicType, &_WatcherType) ||
-#if EV_PREPARE_ENABLE
-            // Scheduler
-            _PyModule_AddTypeWithBase(module, "Scheduler",
-                                      &SchedulerType, &_WatcherType) ||
-#endif
-            _PyModule_AddIntMacro(module, EV_PERIODIC) ||
-#endif
-
-#if EV_SIGNAL_ENABLE
-            // Signal
-            _PyModule_AddTypeWithBase(module, "Signal",
-                                      &SignalType, &_WatcherType) ||
-            _PyModule_AddIntMacro(module, EV_SIGNAL) ||
-#endif
-
-#if EV_CHILD_ENABLE
-            // Child
-            _PyModule_AddTypeWithBase(module, "Child",
-                                      &ChildType, &_WatcherType) ||
-            _PyModule_AddIntMacro(module, EV_CHILD) ||
-#endif
-
-#if EV_IDLE_ENABLE
-            // Idle
-            _PyModule_AddTypeWithBase(module, "Idle",
-                                      &IdleType, &_WatcherType) ||
-            _PyModule_AddIntMacro(module, EV_IDLE) ||
-#endif
-
-#if EV_PREPARE_ENABLE
-            // Prepare
-            _PyModule_AddTypeWithBase(module, "Prepare",
-                                      &PrepareType, &_WatcherType) ||
-            _PyModule_AddIntMacro(module, EV_PREPARE) ||
-#endif
-
-#if EV_CHECK_ENABLE
-            // Check
-            _PyModule_AddTypeWithBase(module, "Check",
-                                      &CheckType, &_WatcherType) ||
-            _PyModule_AddIntMacro(module, EV_CHECK) ||
-#endif
-
-#if EV_EMBED_ENABLE
-            // Embed
-            _PyModule_AddTypeWithBase(module, "Embed",
-                                      &EmbedType, &_WatcherType) ||
-            _PyModule_AddIntMacro(module, EV_EMBED) ||
-#endif
-
-#if EV_FORK_ENABLE
-            // Fork
-            _PyModule_AddTypeWithBase(module, "Fork",
-                                      &ForkType, &_WatcherType) ||
-            _PyModule_AddIntMacro(module, EV_FORK) ||
-#endif
-
-#if EV_ASYNC_ENABLE
-            // Async
-            _PyModule_AddTypeWithBase(module, "Async",
-                                      &AsyncType, &_WatcherType) ||
-            _PyModule_AddIntMacro(module, EV_ASYNC) ||
-#endif
-
-            // additional events
-            _PyModule_AddIntMacro(module, EV_CUSTOM) ||
-            _PyModule_AddIntMacro(module, EV_ERROR)
-           ) {
-            Py_CLEAR(module);
-        }
-        else {
-            // setup libev
-            ev_set_allocator(event_allocator);
-            ev_set_syserr_cb(event_syserr_cb);
-        }
+    if ((module = PyState_FindModule(&event_def))) {
+        Py_INCREF(module);
+    }
+    else if ((module = PyModule_Create(&event_def)) && _module_init(module)) {
+        Py_CLEAR(module);
     }
     return module;
 }

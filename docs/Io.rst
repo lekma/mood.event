@@ -93,7 +93,5 @@
 
     .. py:attribute:: events
 
-        *Read only*
-
         The events being watched.
 

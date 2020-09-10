@@ -33,7 +33,7 @@ from sys import argv
 
 # pkg
 pkg_name = "mood.event"
-pkg_version = "1.3.0"
+pkg_version = "1.5.0"
 pkg_desc = "Python libev interface"
 
 PKG_VERSION = ("PKG_VERSION", "\"{0}\"".format(pkg_version))
@@ -48,7 +48,7 @@ def check_version(current_version, minimum_version, name):
 
 # libev
 libev_name = "ev"
-libev_min_version = "4.31"
+libev_min_version = "4.33"
 
 def libev_version():
     libev_dll_name = find_library(libev_name)
@@ -89,7 +89,25 @@ setup(
 
       ext_package="mood",
       ext_modules=[
-          Extension("event", ["src/event.c"], define_macros=[PKG_VERSION],
+          Extension("event",
+                    [
+                     "src/helpers/helpers.c",
+                     "src/Loop.c",
+                     "src/Watcher.c",
+                     "src/Io.c",
+                     "src/Timer.c",
+                     "src/Periodic.c",
+                     "src/Signal.c",
+                     "src/Child.c",
+                     "src/Idle.c",
+                     "src/Prepare.c",
+                     "src/Check.c",
+                     "src/Embed.c",
+                     "src/Fork.c",
+                     "src/Async.c",
+                     "src/event.c",
+                    ],
+                    define_macros=[PKG_VERSION],
                     libraries=[libev_name])
       ],
 

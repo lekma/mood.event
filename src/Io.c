@@ -1,13 +1,58 @@
-/* ----------------------------------------------------------------------------
- helpers
- ---------------------------------------------------------------------------- */
+/*
+#
+# Copyright © 2020 Malek Hadj-Ali
+# All rights reserved.
+#
+# This file is part of mood.
+#
+# mood is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3
+# as published by the Free Software Foundation.
+#
+# mood is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with mood.  If not, see <http://www.gnu.org/licenses/>.
+#
+*/
 
-/* set the Io */
-static int
-_Io_Set(_Watcher *self, PyObject *fd, int events)
+
+#include "event.h"
+
+
+/* helpers ------------------------------------------------------------------ */
+
+static inline int
+__Io_CheckEvents(int events)
+{
+    if (events & ~(EV__IOFDSET | EV_READ | EV_WRITE)) {
+        PyErr_SetString(Error, "illegal event mask");
+        return -1;
+    }
+    return 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   Io
+   -------------------------------------------------------------------------- */
+
+static inline Watcher *
+__Io_New(PyTypeObject *type)
+{
+    return Watcher_New(type, EV_IO, sizeof(ev_io));
+}
+
+
+static inline int
+__Io_Set(Watcher *self, PyObject *fd, int events)
 {
     int fdnum = PyObject_AsFileDescriptor(fd);
-    if (fdnum < 0) {
+
+    if ((fdnum < 0) || __Io_CheckEvents(events)) {
         return -1;
     }
     ev_io_set((ev_io *)self->watcher, fdnum, events);
@@ -15,141 +60,143 @@ _Io_Set(_Watcher *self, PyObject *fd, int events)
 }
 
 
-/* ----------------------------------------------------------------------------
- IoType
- ---------------------------------------------------------------------------- */
+/* Io_Type ------------------------------------------------------------------ */
 
-/* IoType.tp_doc */
-PyDoc_STRVAR(Io_tp_doc,
-"Io(fd, events, loop, callback[, data=None, priority=0])");
+/* Io_Type.tp_new */
+static PyObject *
+Io_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return (PyObject *)__Io_New(type);
+}
+
+
+/* Io_Type.tp_init */
+static int
+Io_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"fd", "events",
+                             "loop", "callback", "data", "priority", NULL};
+
+    PyObject *fd = NULL;
+    int events = 0;
+    Loop *loop = NULL;
+    PyObject *callback = NULL, *data = Py_None;
+    int priority = 0;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OiO!O|Oi:__init__", kwlist,
+            &fd, &events,
+            &Loop_Type, &loop, &callback, &data, &priority)) {
+        return -1;
+    }
+    if (Watcher_Init(self, loop, callback, data, priority)) {
+        return -1;
+    }
+    return __Io_Set(self, fd, events);
+}
 
 
 /* Io.set(fd, events) */
-PyDoc_STRVAR(Io_set_doc,
-"set(fd, events)");
-
 static PyObject *
-Io_set(_Watcher *self, PyObject *args)
+Io_set(Watcher *self, PyObject *args)
 {
-    PyObject *fd;
-    int events;
+    PyObject *fd = NULL;
+    int events = 0;
 
-    __Watcher_Set(self);
-    if (!PyArg_ParseTuple(args, "Oi:set", &fd, &events)) {
-        return NULL;
-    }
-    if (_Io_Set(self, fd, events)) {
+    if (Watcher_CannotSet(self) ||
+        !PyArg_ParseTuple(args, "Oi:set", &fd, &events) ||
+        __Io_Set(self, fd, events)) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
 
-/* IoType.tp_methods */
+/* Io_Type.tp_methods */
 static PyMethodDef Io_tp_methods[] = {
-    {"set", (PyCFunction)Io_set,
-     METH_VARARGS, Io_set_doc},
+    {"set", (PyCFunction)Io_set, METH_VARARGS,
+     "set(fd, events)"},
     {NULL}  /* Sentinel */
 };
 
 
+/* Io.events */
+static PyObject *
+Io_events_getter(Watcher *self, void *closure)
+{
+    return PyLong_FromLong(((ev_io *)self->watcher)->events);
+}
+
+static int
+Io_events_setter(Watcher *self, PyObject *value, void *closure)
+{
+    int events = -1;
+
+    _Py_PROTECTED_ATTRIBUTE(value, -1);
+    if (Watcher_IsActive(self, "set the 'events' of an Io")) {
+        return -1;
+    }
+    if ((((events = _PyLong_AsInt(value)) == -1) && PyErr_Occurred()) ||
+        __Io_CheckEvents(events)) {
+        return -1;
+    }
+    ev_io_modify((ev_io *)self->watcher, events);
+    return 0;
+}
+
+
 /* Io.fd */
 static PyObject *
-Io_fd_get(_Watcher *self, void *closure)
+Io_fd_getter(Watcher *self, void *closure)
 {
     return PyLong_FromLong(((ev_io *)self->watcher)->fd);
 }
 
 
-/* Io.events */
-static PyObject *
-Io_events_get(_Watcher *self, void *closure)
-{
-    return PyLong_FromLong(((ev_io *)self->watcher)->events);
-}
-
-
-/* IoType.tp_getsets */
+/* Io_Type.tp_getsets */
 static PyGetSetDef Io_tp_getsets[] = {
-    {"fd", (getter)Io_fd_get,
-     _Readonly_attribute_set, NULL, NULL},
-    {"events", (getter)Io_events_get,
-     _Readonly_attribute_set, NULL, NULL},
+    {"events", (getter)Io_events_getter,
+     (setter)Io_events_setter, NULL, NULL},
+    {"fd", (getter)Io_fd_getter,
+     _Py_READONLY_ATTRIBUTE, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
 
+PyTypeObject Io_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "mood.event.Io",
+    .tp_basicsize = sizeof(Watcher),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_doc = "Io(fd, events, loop, callback[, data=None, priority=0])",
+    .tp_methods = Io_tp_methods,
+    .tp_getset = Io_tp_getsets,
+    .tp_init = (initproc)Io_tp_init,
+    .tp_new = Io_tp_new,
+};
 
-/* IoType.tp_init */
-static int
-Io_tp_init(_Watcher *self, PyObject *args, PyObject *kwargs)
+
+/* interface ---------------------------------------------------------------- */
+
+Watcher *
+Io_New(Loop *loop, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {"fd", "events",
-                             "loop", "callback", "data", "priority", NULL};
-    PyObject *fd;
-    int events;
-    Loop *loop;
-    PyObject *callback, *data = Py_None;
+                             "callback", "data", "priority", NULL};
+
+    PyObject *fd = NULL;
+    int events = 0;
+    PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
+    Watcher *self = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OiO!O|Oi:__init__", kwlist,
+    if (PyArg_ParseTupleAndKeywords(args, kwargs, "OiO|Oi:io", kwlist,
             &fd, &events,
-            &LoopType, &loop, &callback, &data, &priority)) {
-        return -1;
+            &callback, &data, &priority) &&
+        (self = __Io_New(&Io_Type)) &&
+        (Watcher_Init(self, loop, callback, data, priority) ||
+         __Io_Set(self, fd, events))) {
+        Py_CLEAR(self);
     }
-    if (__Watcher_Init(self, loop, callback, data, priority)) {
-        return -1;
-    }
-    return _Io_Set(self, fd, events);
+    return self;
 }
 
-
-/* IoType.tp_new */
-static PyObject *
-Io_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    return __Watcher_New(type, EV_IO, sizeof(ev_io));
-}
-
-
-/* IoType */
-static PyTypeObject IoType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "mood.event.Io",                          /*tp_name*/
-    sizeof(_Watcher),                         /*tp_basicsize*/
-    0,                                        /*tp_itemsize*/
-    0,                                        /*tp_dealloc*/
-    0,                                        /*tp_print*/
-    0,                                        /*tp_getattr*/
-    0,                                        /*tp_setattr*/
-    0,                                        /*tp_compare*/
-    0,                                        /*tp_repr*/
-    0,                                        /*tp_as_number*/
-    0,                                        /*tp_as_sequence*/
-    0,                                        /*tp_as_mapping*/
-    0,                                        /*tp_hash */
-    0,                                        /*tp_call*/
-    0,                                        /*tp_str*/
-    0,                                        /*tp_getattro*/
-    0,                                        /*tp_setattro*/
-    0,                                        /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_FINALIZE, /*tp_flags*/
-    Io_tp_doc,                                /*tp_doc*/
-    0,                                        /*tp_traverse*/
-    0,                                        /*tp_clear*/
-    0,                                        /*tp_richcompare*/
-    0,                                        /*tp_weaklistoffset*/
-    0,                                        /*tp_iter*/
-    0,                                        /*tp_iternext*/
-    Io_tp_methods,                            /*tp_methods*/
-    0,                                        /*tp_members*/
-    Io_tp_getsets,                            /*tp_getsets*/
-    0,                                        /*tp_base*/
-    0,                                        /*tp_dict*/
-    0,                                        /*tp_descr_get*/
-    0,                                        /*tp_descr_set*/
-    0,                                        /*tp_dictoffset*/
-    (initproc)Io_tp_init,                     /*tp_init*/
-    0,                                        /*tp_alloc*/
-    Io_tp_new,                                /*tp_new*/
-};

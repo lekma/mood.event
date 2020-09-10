@@ -6,7 +6,7 @@
     :synopsis: Python libev interface
 
 
-.. py:function:: default_loop([flags=EVFLAG_AUTO, callback=None, data=None, io_interval=0.0, timeout_interval=0.0])
+.. py:function:: loop([flags=EVFLAG_AUTO, callback=None, data=None, io_interval=0.0, timeout_interval=0.0])
 
     :rtype: :py:class:`Loop`
 
