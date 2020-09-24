@@ -125,7 +125,7 @@ __Loop_Setup(Loop *self, PyObject *args, PyObject *kwargs, int _default)
     PyObject *callback = Py_None, *data = Py_None;
     double io_ival = 0.0, timeout_ival = 0.0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|IOOddp:__new__", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|IOOdd:__new__", kwlist,
                                      &flags, &callback, &data,
                                      &io_ival, &timeout_ival)) {
         return -1;
