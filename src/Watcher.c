@@ -257,7 +257,7 @@ __Watcher_Alloc(PyTypeObject *type)
 {
     Watcher *self = NULL;
 
-    if ((self = PyObject_GC_New(Watcher, type))) {
+    if ((self = PyObject_GC_NEW(Watcher, type))) {
         self->ev_type = EV_NONE;
         self->watcher = NULL;
         self->loop = NULL;

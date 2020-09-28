@@ -105,7 +105,7 @@ __Loop_Alloc(PyTypeObject *type)
 {
     Loop *self = NULL;
 
-    if ((self = PyObject_GC_New(Loop, type))) {
+    if ((self = PyObject_GC_NEW(Loop, type))) {
         self->loop = NULL;
         self->callback = NULL;
         self->data = NULL;
