@@ -53,6 +53,23 @@ extern "C" {
     } while (0)
 
 
+#define _Py_CHECK_CALLABLE(cb, r) \
+    do { \
+        if (!PyCallable_Check((cb))) { \
+            PyErr_SetString(PyExc_TypeError, "a callable is required"); \
+            return (r); \
+        } \
+    } while (0)
+
+#define _Py_CHECK_CALLABLE_OR_NONE(cb, r) \
+    do { \
+        if ((cb) != Py_None && !PyCallable_Check((cb))) { \
+            PyErr_SetString(PyExc_TypeError, "a callable or None is required"); \
+            return (r); \
+        } \
+    } while (0)
+
+
 #define _Py_CHECK_POSITIVE_OR_ZERO_FLOAT(v, r) \
     do { \
         if ((v) < 0.0) { \
