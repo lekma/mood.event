@@ -44,15 +44,6 @@ extern "C" {
 #define _PyObject_Callback PyObject_CallFunctionObjArgs
 
 
-#define _Py_SET_MEMBER(m, op) \
-    do { \
-        PyObject *_py_tmp = (PyObject *)(m); \
-        Py_INCREF((op)); \
-        (m) = (op); \
-        Py_XDECREF(_py_tmp); \
-    } while (0)
-
-
 #define _Py_CHECK_CALLABLE(cb, r) \
     do { \
         if (!PyCallable_Check((cb))) { \
