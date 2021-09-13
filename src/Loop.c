@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2020 Malek Hadj-Ali
+# Copyright © 2021 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -51,8 +51,10 @@ __Loop_WarnOrStop(ev_loop *loop, PyObject *context)
 {
     Loop *self = ev_userdata(loop);
 
-    if (!__Loop_Fatal(context) && (self->callback == Py_None) &&
-        PyErr_ExceptionMatches(PyExc_Exception)) {
+    if (
+        !__Loop_Fatal(context) && (self->callback == Py_None) &&
+        PyErr_ExceptionMatches(PyExc_Exception)
+    ) {
         PyErr_WriteUnraisable(context);
     }
 }
@@ -119,15 +121,19 @@ __Loop_Alloc(PyTypeObject *type)
 static inline int
 __Loop_Setup(Loop *self, PyObject *args, PyObject *kwargs, int _default)
 {
-    static char *kwlist[] = {"flags", "callback", "data",
-                             "io_interval", "timeout_interval", NULL};
+    static char *kwlist[] = {
+        "flags", "callback", "data", "io_interval", "timeout_interval", NULL
+    };
     unsigned int flags = EVFLAG_AUTO;
     PyObject *callback = Py_None, *data = Py_None;
     double io_ival = 0.0, timeout_ival = 0.0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|IOOdd:__new__", kwlist,
-                                     &flags, &callback, &data,
-                                     &io_ival, &timeout_ival)) {
+    if (
+        !PyArg_ParseTupleAndKeywords(
+            args, kwargs, "|IOOdd:__new__", kwlist,
+            &flags, &callback, &data, &io_ival, &timeout_ival
+        )
+    ) {
         return -1;
     }
     if (!(self->loop = _default ? ev_default_loop(flags) : ev_loop_new(flags))) {
@@ -363,70 +369,126 @@ Loop_verify(Loop *self)
 
 /* Loop_Type.tp_methods */
 static PyMethodDef Loop_tp_methods[] = {
-    {"start", (PyCFunction)Loop_start, METH_VARARGS,
-     "start([flags]) -> bool"},
-    {"stop", (PyCFunction)Loop_stop, METH_VARARGS,
-     "stop([how])"},
-    {"now", (PyCFunction)Loop_now, METH_VARARGS,
-     "now([update]) -> float"},
-    {"invoke", (PyCFunction)Loop_invoke, METH_NOARGS,
-     "invoke()"},
-    {"reset", (PyCFunction)Loop_reset, METH_NOARGS,
-     "reset()"},
-    {"suspend", (PyCFunction)Loop_suspend, METH_NOARGS,
-     "suspend()"},
-    {"resume", (PyCFunction)Loop_resume, METH_NOARGS,
-     "resume()"},
-    {"incref", (PyCFunction)Loop_incref, METH_NOARGS,
-     "incref()"},
-    {"decref", (PyCFunction)Loop_decref, METH_NOARGS,
-     "decref()"},
-    {"verify", (PyCFunction)Loop_verify, METH_NOARGS,
-     "verify()"},
+    {
+        "start", (PyCFunction)Loop_start,
+        METH_VARARGS, "start([flags]) -> bool"
+    },
+    {
+        "stop", (PyCFunction)Loop_stop,
+        METH_VARARGS, "stop([how])"
+    },
+    {
+        "now", (PyCFunction)Loop_now,
+        METH_VARARGS, "now([update]) -> float"
+    },
+    {
+        "invoke", (PyCFunction)Loop_invoke,
+        METH_NOARGS, "invoke()"
+    },
+    {
+        "reset", (PyCFunction)Loop_reset,
+        METH_NOARGS, "reset()"
+    },
+    {
+        "suspend", (PyCFunction)Loop_suspend,
+        METH_NOARGS, "suspend()"
+    },
+    {
+        "resume", (PyCFunction)Loop_resume,
+        METH_NOARGS, "resume()"
+    },
+    {
+        "incref", (PyCFunction)Loop_incref,
+        METH_NOARGS, "incref()"
+    },
+    {
+        "decref", (PyCFunction)Loop_decref,
+        METH_NOARGS, "decref()"
+    },
+    {
+        "verify", (PyCFunction)Loop_verify,
+        METH_NOARGS, "verify()"
+    },
     /* watcher methods */
-    {"io", (PyCFunction)Io_New, METH_VARARGS | METH_KEYWORDS,
-     "io(fd, events, callback[, data=None, priority=0]) -> Io"},
-    {"timer", (PyCFunction)Timer_New, METH_VARARGS | METH_KEYWORDS,
-     "timer(after, repeat, callback[, data=None, priority=0]) -> Timer"},
+    {
+        "io", (PyCFunction)Io_New,
+        METH_VARARGS | METH_KEYWORDS,
+        "io(fd, events, callback[, data=None, priority=0]) -> Io"
+    },
+    {
+        "timer", (PyCFunction)Timer_New,
+        METH_VARARGS | METH_KEYWORDS,
+        "timer(after, repeat, callback[, data=None, priority=0]) -> Timer"
+    },
 #if EV_PERIODIC_ENABLE
-    {"periodic", (PyCFunction)Periodic_New, METH_VARARGS | METH_KEYWORDS,
-     "periodic(offset, interval, callback[, data=None, priority=0]) -> Periodic"},
+    {
+        "periodic", (PyCFunction)Periodic_New,
+        METH_VARARGS | METH_KEYWORDS,
+        "periodic(offset, interval, callback[, data=None, priority=0]) -> Periodic"
+    },
 #if EV_PREPARE_ENABLE
-    {"scheduler", (PyCFunction)Scheduler_New, METH_VARARGS | METH_KEYWORDS,
-     "scheduler(reschedule, callback[, data=None, priority=0]) -> Scheduler"},
+    {
+        "scheduler", (PyCFunction)Scheduler_New,
+        METH_VARARGS | METH_KEYWORDS,
+        "scheduler(reschedule, callback[, data=None, priority=0]) -> Scheduler"
+    },
 #endif
 #endif
 #if EV_SIGNAL_ENABLE
-    {"signal", (PyCFunction)Signal_New, METH_VARARGS | METH_KEYWORDS,
-     "signal(signum, callback[, data=None, priority=0]) -> Signal"},
+    {
+        "signal", (PyCFunction)Signal_New,
+        METH_VARARGS | METH_KEYWORDS,
+        "signal(signum, callback[, data=None, priority=0]) -> Signal"
+    },
 #endif
 #if EV_CHILD_ENABLE
-    {"child", (PyCFunction)Child_New, METH_VARARGS | METH_KEYWORDS,
-     "child(pid, trace, callback[, data=None, priority=0]) -> Child"},
+    {
+        "child", (PyCFunction)Child_New,
+        METH_VARARGS | METH_KEYWORDS,
+        "child(pid, trace, callback[, data=None, priority=0]) -> Child"
+    },
 #endif
 #if EV_IDLE_ENABLE
-    {"idle", (PyCFunction)Idle_New, METH_VARARGS | METH_KEYWORDS,
-     "idle(callback[, data=None, priority=0]) -> Idle"},
+    {
+        "idle", (PyCFunction)Idle_New,
+        METH_VARARGS | METH_KEYWORDS,
+        "idle(callback[, data=None, priority=0]) -> Idle"
+    },
 #endif
 #if EV_PREPARE_ENABLE
-    {"prepare", (PyCFunction)Prepare_New, METH_VARARGS | METH_KEYWORDS,
-     "prepare(callback[, data=None, priority=0]) -> Prepare"},
+    {
+        "prepare", (PyCFunction)Prepare_New,
+        METH_VARARGS | METH_KEYWORDS,
+        "prepare(callback[, data=None, priority=0]) -> Prepare"
+    },
 #endif
 #if EV_CHECK_ENABLE
-    {"check", (PyCFunction)Check_New, METH_VARARGS | METH_KEYWORDS,
-     "check(callback[, data=None, priority=0]) -> Check"},
+    {
+        "check", (PyCFunction)Check_New,
+        METH_VARARGS | METH_KEYWORDS,
+        "check(callback[, data=None, priority=0]) -> Check"
+    },
 #endif
 #if EV_EMBED_ENABLE
-    {"embed", (PyCFunction)Embed_New, METH_VARARGS | METH_KEYWORDS,
-     "embed(other[, callback=None, data=None, priority=0]) -> Embed"},
+    {
+        "embed", (PyCFunction)Embed_New,
+        METH_VARARGS | METH_KEYWORDS,
+        "embed(other[, callback=None, data=None, priority=0]) -> Embed"
+    },
 #endif
 #if EV_FORK_ENABLE
-    {"fork", (PyCFunction)Fork_New, METH_VARARGS | METH_KEYWORDS,
-     "fork(callback[, data=None, priority=0]) -> Fork"},
+    {
+        "fork", (PyCFunction)Fork_New,
+        METH_VARARGS | METH_KEYWORDS,
+        "fork(callback[, data=None, priority=0]) -> Fork"
+    },
 #endif
 #if EV_ASYNC_ENABLE
-    {"async", (PyCFunction)Async_New, METH_VARARGS | METH_KEYWORDS,
-     "async(callback[, data=None, priority=0]) -> Async"},
+    {
+        "async", (PyCFunction)Async_New,
+        METH_VARARGS | METH_KEYWORDS,
+        "async(callback[, data=None, priority=0]) -> Async"
+    },
 #endif
     {NULL}  /* Sentinel */
 };
@@ -534,24 +596,42 @@ Loop_pending_getter(Loop *self, void *closure)
 
 /* Loop_Type.tp_getsets */
 static PyGetSetDef Loop_tp_getsets[] = {
-    {"callback", (getter)Loop_callback_getter,
-     (setter)Loop_callback_setter, NULL, NULL},
-    {"data", (getter)Loop_data_getter,
-     (setter)Loop_data_setter, NULL, NULL},
-    {"io_interval", (getter)Loop_interval_getter,
-     (setter)Loop_interval_setter, NULL, Py_True},
-    {"timeout_interval", (getter)Loop_interval_getter,
-     (setter)Loop_interval_setter, NULL, NULL},
-    {"default", (getter)Loop_default_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
-    {"iteration", (getter)Loop_iteration_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
-    {"depth", (getter)Loop_depth_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
-    {"backend", (getter)Loop_backend_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
-    {"pending", (getter)Loop_pending_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
+    {
+        "callback", (getter)Loop_callback_getter,
+        (setter)Loop_callback_setter, NULL, NULL
+    },
+    {
+        "data", (getter)Loop_data_getter,
+        (setter)Loop_data_setter, NULL, NULL
+    },
+    {
+        "io_interval", (getter)Loop_interval_getter,
+        (setter)Loop_interval_setter, NULL, Py_True
+    },
+    {
+        "timeout_interval", (getter)Loop_interval_getter,
+        (setter)Loop_interval_setter, NULL, NULL
+    },
+    {
+        "default", (getter)Loop_default_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
+    {
+        "iteration", (getter)Loop_iteration_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
+    {
+        "depth", (getter)Loop_depth_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
+    {
+        "backend", (getter)Loop_backend_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
+    {
+        "pending", (getter)Loop_pending_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
     {NULL}  /* Sentinel */
 };
 

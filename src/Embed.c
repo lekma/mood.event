@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2020 Malek Hadj-Ali
+# Copyright © 2021 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -100,16 +100,22 @@ Embed_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static int
 Embed_tp_init(Embed *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"other",
-                             "loop", "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "other",
+        "loop", "callback", "data", "priority", NULL
+    };
 
     Loop *other = NULL, *loop = NULL;
     PyObject *callback = Py_None, *data = Py_None;
     int priority = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!|OOi:__init__", kwlist,
+    if (
+        !PyArg_ParseTupleAndKeywords(
+            args, kwargs, "O!O!|OOi:__init__", kwlist,
             &Loop_Type, &other,
-            &Loop_Type, &loop, &callback, &data, &priority)) {
+            &Loop_Type, &loop, &callback, &data, &priority
+        )
+    ) {
         return -1;
     }
     if (Watcher_Init((Watcher *)self, loop, callback, data, priority)) {
@@ -154,9 +160,11 @@ Embed_set(Embed *self, PyObject *args)
 {
     Loop *other = NULL;
 
-    if (Watcher_CannotSet((Watcher *)self) ||
+    if (
+        Watcher_CannotSet((Watcher *)self) ||
         !PyArg_ParseTuple(args, "O!:set", &Loop_Type, &other) ||
-        __Embed_Set(self, other)) {
+        __Embed_Set(self, other)
+    ) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -177,10 +185,14 @@ Embed_sweep(Watcher *self)
 
 /* Embed_Type.tp_methods */
 static PyMethodDef Embed_tp_methods[] = {
-    {"set", (PyCFunction)Embed_set, METH_VARARGS,
-     "set(other)"},
-    {"sweep", (PyCFunction)Embed_sweep, METH_NOARGS,
-     "sweep()"},
+    {
+        "set", (PyCFunction)Embed_set,
+        METH_VARARGS, "set(other)"
+    },
+    {
+        "sweep", (PyCFunction)Embed_sweep,
+        METH_NOARGS, "sweep()"
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -195,8 +207,10 @@ Embed_other_getter(Embed *self, void *closure)
 
 /* Embed_Type.tp_getsets */
 static PyGetSetDef Embed_tp_getsets[] = {
-    {"other", (getter)Embed_other_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
+    {
+        "other", (getter)Embed_other_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -222,20 +236,28 @@ PyTypeObject Embed_Type = {
 Embed *
 Embed_New(Loop *loop, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"other",
-                             "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "other",
+        "callback", "data", "priority", NULL
+    };
 
     Loop *other = NULL;
     PyObject *callback = Py_None, *data = Py_None;
     int priority = 0;
     Embed *self = NULL;
 
-    if (PyArg_ParseTupleAndKeywords(args, kwargs, "O!|OOi:embed", kwlist,
+    if (
+        PyArg_ParseTupleAndKeywords(
+            args, kwargs, "O!|OOi:embed", kwlist,
             &Loop_Type, &other,
-            &callback, &data, &priority) &&
+            &callback, &data, &priority
+        ) &&
         (self = __Embed_New(&Embed_Type)) &&
-        (Watcher_Init((Watcher *)self, loop, callback, data, priority) ||
-         __Embed_Set(self, other))) {
+        (
+            Watcher_Init((Watcher *)self, loop, callback, data, priority) ||
+            __Embed_Set(self, other)
+        )
+    ) {
         Py_CLEAR(self);
     }
     return self;

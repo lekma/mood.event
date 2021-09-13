@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2020 Malek Hadj-Ali
+# Copyright © 2021 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -33,7 +33,8 @@ __Child_CheckLoop(Loop *loop)
 {
     if (!ev_is_default_loop(loop->loop)) {
         PyErr_SetString(
-            Error, "Child watchers are only supported in the 'default loop'");
+            Error, "Child watchers are only supported in the 'default loop'"
+        );
         return -1;
     }
     return 0;
@@ -73,21 +74,29 @@ Child_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static int
 Child_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"pid", "trace",
-                             "loop", "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "pid", "trace",
+        "loop", "callback", "data", "priority", NULL
+    };
 
     int pid = 0, trace = 0;
     Loop *loop = NULL;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ipO!O|Oi:__init__", kwlist,
+    if (
+        !PyArg_ParseTupleAndKeywords(
+            args, kwargs, "ipO!O|Oi:__init__", kwlist,
             &pid, &trace,
-            &Loop_Type, &loop, &callback, &data, &priority)) {
+            &Loop_Type, &loop, &callback, &data, &priority
+        )
+    ) {
         return -1;
     }
-    if (__Child_CheckLoop(loop) ||
-        Watcher_Init(self, loop, callback, data, priority)) {
+    if (
+        __Child_CheckLoop(loop) ||
+        Watcher_Init(self, loop, callback, data, priority)
+    ) {
         return -1;
     }
     return __Child_Set(self, pid, trace);
@@ -100,9 +109,11 @@ Child_set(Watcher *self, PyObject *args)
 {
     int pid = 0, trace = 0;
 
-    if (Watcher_CannotSet(self) ||
+    if (
+        Watcher_CannotSet(self) ||
         !PyArg_ParseTuple(args, "ip:set", &pid, &trace) ||
-        __Child_Set(self, pid, trace)) {
+        __Child_Set(self, pid, trace)
+    ) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -111,8 +122,10 @@ Child_set(Watcher *self, PyObject *args)
 
 /* Child_Type.tp_methods */
 static PyMethodDef Child_tp_methods[] = {
-    {"set", (PyCFunction)Child_set, METH_VARARGS,
-     "set(pid, trace)"},
+    {
+        "set", (PyCFunction)Child_set,
+        METH_VARARGS, "set(pid, trace)"
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -169,12 +182,18 @@ Child_pid_getter(Watcher *self, void *closure)
 
 /* Child_Type.tp_getsets */
 static PyGetSetDef Child_tp_getsets[] = {
-    {"rpid", (getter)Child_rpid_getter,
-     (setter)Child_rpid_setter, NULL, NULL},
-    {"rstatus", (getter)Child_rstatus_getter,
-     (setter)Child_rstatus_setter, NULL, NULL},
-    {"pid", (getter)Child_pid_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
+    {
+        "rpid", (getter)Child_rpid_getter,
+        (setter)Child_rpid_setter, NULL, NULL
+    },
+    {
+        "rstatus", (getter)Child_rstatus_getter,
+        (setter)Child_rstatus_setter, NULL, NULL
+    },
+    {
+        "pid", (getter)Child_pid_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -197,21 +216,29 @@ PyTypeObject Child_Type = {
 Watcher *
 Child_New(Loop *loop, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"pid", "trace",
-                             "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "pid", "trace",
+        "callback", "data", "priority", NULL
+    };
 
     int pid = 0, trace = 0;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
     Watcher *self = NULL;
 
-    if (!__Child_CheckLoop(loop) &&
-        PyArg_ParseTupleAndKeywords(args, kwargs, "ipO|Oi:child", kwlist,
+    if (
+        !__Child_CheckLoop(loop) &&
+        PyArg_ParseTupleAndKeywords(
+            args, kwargs, "ipO|Oi:child", kwlist,
             &pid, &trace,
-            &callback, &data, &priority) &&
+            &callback, &data, &priority
+        ) &&
         (self = __Child_New(&Child_Type)) &&
-        (Watcher_Init(self, loop, callback, data, priority) ||
-         __Child_Set(self, pid, trace))) {
+        (
+            Watcher_Init(self, loop, callback, data, priority) ||
+            __Child_Set(self, pid, trace)
+        )
+    ) {
         Py_CLEAR(self);
     }
     return self;

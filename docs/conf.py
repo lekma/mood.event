@@ -47,7 +47,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'mood.event'
-copyright = '2020, lekma'
+copyright = '2021, lekma'
 author = 'lekma'
 
 # The version info for the project you're documenting, acts as replacement for

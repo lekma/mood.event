@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2020 Malek Hadj-Ali
+# Copyright © 2021 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -59,17 +59,23 @@ Signal_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static int
 Signal_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"signum",
-                             "loop", "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "signum",
+        "loop", "callback", "data", "priority", NULL
+    };
 
     int signum = 0;
     Loop *loop = NULL;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iO!O|Oi:__init__", kwlist,
+    if (
+        !PyArg_ParseTupleAndKeywords(
+            args, kwargs, "iO!O|Oi:__init__", kwlist,
             &signum,
-            &Loop_Type, &loop, &callback, &data, &priority)) {
+            &Loop_Type, &loop, &callback, &data, &priority
+        )
+    ) {
         return -1;
     }
     if (Watcher_Init(self, loop, callback, data, priority)) {
@@ -85,9 +91,11 @@ Signal_set(Watcher *self, PyObject *args)
 {
     int signum = 0;
 
-    if (Watcher_CannotSet(self) ||
+    if (
+        Watcher_CannotSet(self) ||
         !PyArg_ParseTuple(args, "i:set", &signum) ||
-        __Signal_Set(self, signum)) {
+        __Signal_Set(self, signum)
+    ) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -96,8 +104,10 @@ Signal_set(Watcher *self, PyObject *args)
 
 /* Signal_Type.tp_methods */
 static PyMethodDef Signal_tp_methods[] = {
-    {"set", (PyCFunction)Signal_set, METH_VARARGS,
-     "set(signum)"},
+    {
+        "set", (PyCFunction)Signal_set,
+        METH_VARARGS, "set(signum)"
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -112,8 +122,10 @@ Signal_signum_getter(Watcher *self, void *closure)
 
 /* Signal_Type.tp_getsets */
 static PyGetSetDef Signal_tp_getsets[] = {
-    {"signum", (getter)Signal_signum_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
+    {
+        "signum", (getter)Signal_signum_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -136,20 +148,28 @@ PyTypeObject Signal_Type = {
 Watcher *
 Signal_New(Loop *loop, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"signum",
-                             "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "signum",
+        "callback", "data", "priority", NULL
+    };
 
     int signum = 0;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
     Watcher *self = NULL;
 
-    if (PyArg_ParseTupleAndKeywords(args, kwargs, "iO|Oi:signal", kwlist,
+    if (
+        PyArg_ParseTupleAndKeywords(
+            args, kwargs, "iO|Oi:signal", kwlist,
             &signum,
-            &callback, &data, &priority) &&
+            &callback, &data, &priority
+        ) &&
         (self = __Signal_New(&Signal_Type)) &&
-        (Watcher_Init(self, loop, callback, data, priority) ||
-         __Signal_Set(self, signum))) {
+        (
+            Watcher_Init(self, loop, callback, data, priority) ||
+            __Signal_Set(self, signum)
+        )
+    ) {
         Py_CLEAR(self);
     }
     return self;

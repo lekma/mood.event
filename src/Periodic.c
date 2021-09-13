@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2020 Malek Hadj-Ali
+# Copyright © 2021 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -85,17 +85,23 @@ Periodic_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static int
 Periodic_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"offset", "interval",
-                             "loop", "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "offset", "interval",
+        "loop", "callback", "data", "priority", NULL
+    };
 
     double offset = 0.0, interval = 0.0;
     Loop *loop = NULL;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddO!O|Oi:__init__", kwlist,
+    if (
+        !PyArg_ParseTupleAndKeywords(
+            args, kwargs, "ddO!O|Oi:__init__", kwlist,
             &offset, &interval,
-            &Loop_Type, &loop, &callback, &data, &priority)) {
+            &Loop_Type, &loop, &callback, &data, &priority
+        )
+    ) {
         return -1;
     }
     if (Watcher_Init(self, loop, callback, data, priority)) {
@@ -111,9 +117,11 @@ Periodic_set(Watcher *self, PyObject *args)
 {
     double offset = 0.0, interval = 0.0;
 
-    if (Watcher_CannotSet(self) ||
+    if (
+        Watcher_CannotSet(self) ||
         !PyArg_ParseTuple(args, "dd:set", &offset, &interval) ||
-        __Periodic_Set(self, offset, interval)) {
+        __Periodic_Set(self, offset, interval)
+    ) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -134,10 +142,14 @@ Periodic_reset(Watcher *self)
 
 /* Periodic_Type.tp_methods */
 static PyMethodDef Periodic_tp_methods[] = {
-    {"set", (PyCFunction)Periodic_set, METH_VARARGS,
-     "set(offset, interval)"},
-    {"reset", (PyCFunction)Periodic_reset, METH_NOARGS,
-     Periodic_reset_doc},
+    {
+        "set", (PyCFunction)Periodic_set,
+        METH_VARARGS, "set(offset, interval)"
+    },
+    {
+        "reset", (PyCFunction)Periodic_reset,
+        METH_NOARGS, Periodic_reset_doc
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -200,12 +212,18 @@ Periodic_at_getter(Watcher *self, void *closure)
 
 /* Periodic_Type.tp_getsets */
 static PyGetSetDef Periodic_tp_getsets[] = {
-    {"offset", (getter)Periodic_offset_getter,
-     (setter)Periodic_offset_setter, NULL, NULL},
-    {"interval", (getter)Periodic_interval_getter,
-     (setter)Periodic_interval_setter, NULL, NULL},
-    {"at", (getter)Periodic_at_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
+    {
+        "offset", (getter)Periodic_offset_getter,
+        (setter)Periodic_offset_setter, NULL, NULL
+    },
+    {
+        "interval", (getter)Periodic_interval_getter,
+        (setter)Periodic_interval_setter, NULL, NULL
+    },
+    {
+        "at", (getter)Periodic_at_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -228,20 +246,28 @@ PyTypeObject Periodic_Type = {
 Watcher *
 Periodic_New(Loop *loop, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"offset", "interval",
-                             "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "offset", "interval",
+        "callback", "data", "priority", NULL
+    };
 
     double offset = 0.0, interval = 0.0;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
     Watcher *self = NULL;
 
-    if (PyArg_ParseTupleAndKeywords(args, kwargs, "ddO|Oi:periodic", kwlist,
+    if (
+        PyArg_ParseTupleAndKeywords(
+            args, kwargs, "ddO|Oi:periodic", kwlist,
             &offset, &interval,
-            &callback, &data, &priority) &&
+            &callback, &data, &priority
+        ) &&
         (self = __Periodic_New(&Periodic_Type)) &&
-        (Watcher_Init(self, loop, callback, data, priority) ||
-         __Periodic_Set(self, offset, interval))) {
+        (
+            Watcher_Init(self, loop, callback, data, priority) ||
+            __Periodic_Set(self, offset, interval)
+        )
+    ) {
         Py_CLEAR(self);
     }
     return self;
@@ -298,8 +324,10 @@ __Scheduler_Reschedule(ev_periodic *periodic, double now)
     PyObject *pynow = NULL, *pyresult = NULL;
     double result = -1.0;
 
-    if (_Py_INVOKE_VERIFY(self->reschedule, "reschedule callback") ||
-        !(pynow = PyFloat_FromDouble(now))) {
+    if (
+        _Py_INVOKE_VERIFY(self->reschedule, "reschedule callback") ||
+        !(pynow = PyFloat_FromDouble(now))
+    ) {
         self->err_fatal = 1;
         goto fail;
     }
@@ -314,8 +342,10 @@ __Scheduler_Reschedule(ev_periodic *periodic, double now)
         goto fail;
     }
     if (result < now) {
-        PyErr_Format(Error, "%R must return a value >= to the 'now' argument",
-                     self->reschedule);
+        PyErr_Format(
+            Error, "%R must return a value >= to the 'now' argument",
+            self->reschedule
+        );
         goto fail;
     }
     goto end;
@@ -367,7 +397,9 @@ __Scheduler_Setup(Scheduler *self, int ev_type, size_t size)
     ev_prepare_init(self->prepare, __Scheduler_Stop);
     ev_set_priority(self->prepare, EV_MAXPRI);
     self->prepare->data = self;
-    ev_periodic_set((ev_periodic *)watcher->watcher, .0, .0, __Scheduler_Reschedule);
+    ev_periodic_set(
+        (ev_periodic *)watcher->watcher, .0, .0, __Scheduler_Reschedule
+    );
     return 0;
 }
 
@@ -455,17 +487,23 @@ Scheduler_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static int
 Scheduler_tp_init(Scheduler *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"reschedule",
-                             "loop", "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "reschedule",
+        "loop", "callback", "data", "priority", NULL
+    };
 
     PyObject *reschedule = NULL;
     Loop *loop = NULL;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO!O|Oi:__init__", kwlist,
+    if (
+        !PyArg_ParseTupleAndKeywords(
+            args, kwargs, "OO!O|Oi:__init__", kwlist,
             &reschedule,
-            &Loop_Type, &loop, &callback, &data, &priority)) {
+            &Loop_Type, &loop, &callback, &data, &priority
+        )
+    ) {
         return -1;
     }
     if (Watcher_Init((Watcher *)self, loop, callback, data, priority)) {
@@ -514,8 +552,10 @@ Scheduler_tp_dealloc(Scheduler *self)
 
 /* Scheduler_Type.tp_methods */
 static PyMethodDef Scheduler_tp_methods[] = {
-    {"reset", (PyCFunction)Periodic_reset, METH_NOARGS,
-     Periodic_reset_doc},
+    {
+        "reset", (PyCFunction)Periodic_reset,
+        METH_NOARGS, Periodic_reset_doc
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -537,10 +577,14 @@ Scheduler_reschedule_setter(Scheduler *self, PyObject *value, void *closure)
 
 /* Scheduler_Type.tp_getsets */
 static PyGetSetDef Scheduler_tp_getsets[] = {
-    {"reschedule", (getter)Scheduler_reschedule_getter,
-     (setter)Scheduler_reschedule_setter, NULL, NULL},
-    {"at", (getter)Periodic_at_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
+    {
+        "reschedule", (getter)Scheduler_reschedule_getter,
+        (setter)Scheduler_reschedule_setter, NULL, NULL
+    },
+    {
+        "at", (getter)Periodic_at_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -567,20 +611,28 @@ PyTypeObject Scheduler_Type = {
 Scheduler *
 Scheduler_New(Loop *loop, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"reschedule",
-                             "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "reschedule",
+        "callback", "data", "priority", NULL
+    };
 
     PyObject *reschedule = NULL;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
     Scheduler *self = NULL;
 
-    if (PyArg_ParseTupleAndKeywords(args, kwargs, "OO|Oi:scheduler", kwlist,
+    if (
+        PyArg_ParseTupleAndKeywords(
+            args, kwargs, "OO|Oi:scheduler", kwlist,
             &reschedule,
-            &callback, &data, &priority) &&
+            &callback, &data, &priority
+        ) &&
         (self = __Scheduler_New(&Scheduler_Type)) &&
-        (Watcher_Init((Watcher *)self, loop, callback, data, priority) ||
-         __Scheduler_Set(self, reschedule))) {
+        (
+            Watcher_Init((Watcher *)self, loop, callback, data, priority) ||
+            __Scheduler_Set(self, reschedule)
+        )
+    ) {
         Py_CLEAR(self);
     }
     return self;

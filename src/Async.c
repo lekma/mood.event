@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2020 Malek Hadj-Ali
+# Copyright © 2021 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -58,8 +58,10 @@ Async_send(Watcher *self)
 
 /* Async_Type.tp_methods */
 static PyMethodDef Async_tp_methods[] = {
-    {"send", (PyCFunction)Async_send, METH_NOARGS,
-     "send()"},
+    {
+        "send", (PyCFunction)Async_send,
+        METH_NOARGS, "send()"
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -74,8 +76,10 @@ Async_sent_getter(Watcher *self, void *closure)
 
 /* Async_Type.tp_getsets */
 static PyGetSetDef Async_tp_getsets[] = {
-    {"sent", (getter)Async_sent_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
+    {
+        "sent", (getter)Async_sent_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -97,16 +101,22 @@ PyTypeObject Async_Type = {
 Watcher *
 Async_New(Loop *loop, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "callback", "data", "priority", NULL
+    };
 
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
     Watcher *self = NULL;
 
-    if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|Oi:async", kwlist,
-            &callback, &data, &priority) &&
+    if (
+        PyArg_ParseTupleAndKeywords(
+            args, kwargs, "O|Oi:async", kwlist,
+            &callback, &data, &priority
+        ) &&
         (self = __Async_New(&Async_Type)) &&
-        Watcher_Init(self, loop, callback, data, priority)) {
+        Watcher_Init(self, loop, callback, data, priority)
+    ) {
         Py_CLEAR(self);
     }
     return self;

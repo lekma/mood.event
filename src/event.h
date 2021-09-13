@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2020 Malek Hadj-Ali
+# Copyright © 2021 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -64,8 +64,9 @@ extern "C" {
 #define _Py_CHECK_POSITIVE_OR_ZERO_FLOAT(v, r) \
     do { \
         if ((v) < 0.0) { \
-            PyErr_SetString(PyExc_ValueError, \
-                            "a positive float or 0.0 is required"); \
+            PyErr_SetString( \
+                PyExc_ValueError, "a positive float or 0.0 is required" \
+            ); \
             return (r); \
         } \
     } while (0)

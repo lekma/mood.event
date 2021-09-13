@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2020 Malek Hadj-Ali
+# Copyright © 2021 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -188,7 +188,9 @@ ___Watcher_ExecCallback(ev_loop *loop, ev_watcher *watcher, int revents)
     else if (!_Py_INVOKE_VERIFY(self->callback, "watcher callback")) {
         if (self->callback != Py_None) {
             if ((pyrevents = PyLong_FromLong(revents))) {
-                pyresult = _PyObject_Callback(self->callback, self, pyrevents, NULL);
+                pyresult = _PyObject_Callback(
+                    self->callback, self, pyrevents, NULL
+                );
                 if (pyresult) {
                     Py_DECREF(pyresult);
                 }
@@ -298,7 +300,9 @@ __Watcher_New(PyTypeObject *type, int ev_type, size_t size)
 
 
 static inline int
-__Watcher_Init(Watcher *self, Loop *loop, PyObject *callback, PyObject *data, int priority)
+__Watcher_Init(
+    Watcher *self, Loop *loop, PyObject *callback, PyObject *data, int priority
+)
 {
     __Watcher_CheckAllStates(self, "init a", -1);
     __Watcher_CheckCallback(self, callback, -1);
@@ -367,8 +371,12 @@ Watcher_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O|Oi:__init__", kwlist,
-            &Loop_Type, &loop, &callback, &data, &priority)) {
+    if (
+        !PyArg_ParseTupleAndKeywords(
+            args, kwargs, "O!O|Oi:__init__", kwlist,
+            &Loop_Type, &loop, &callback, &data, &priority
+        )
+    ) {
         return -1;
     }
     return __Watcher_Init(self, loop, callback, data, priority);
@@ -474,16 +482,26 @@ Watcher_clear(Watcher *self)
 
 /* Watcher_Type.tp_methods */
 static PyMethodDef Watcher_tp_methods[] = {
-    {"start", (PyCFunction)Watcher_start, METH_NOARGS,
-     "start()"},
-    {"stop", (PyCFunction)Watcher_stop, METH_NOARGS,
-     "stop()"},
-    {"invoke", (PyCFunction)Watcher_invoke, METH_VARARGS,
-     "invoke(revents)"},
-    {"feed", (PyCFunction)Watcher_feed, METH_VARARGS,
-     "feed(revents)"},
-    {"clear", (PyCFunction)Watcher_clear, METH_NOARGS,
-     "clear() -> int"},
+    {
+        "start", (PyCFunction)Watcher_start,
+        METH_NOARGS, "start()"
+    },
+    {
+        "stop", (PyCFunction)Watcher_stop,
+        METH_NOARGS, "stop()"
+    },
+    {
+        "invoke", (PyCFunction)Watcher_invoke,
+        METH_VARARGS, "invoke(revents)"
+    },
+    {
+        "feed", (PyCFunction)Watcher_feed,
+        METH_VARARGS, "feed(revents)"
+    },
+    {
+        "clear", (PyCFunction)Watcher_clear,
+        METH_NOARGS, "clear() -> int"
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -569,18 +587,30 @@ Watcher_pending_getter(Watcher *self, void *closure)
 
 /* Watcher_Type.tp_getsets */
 static PyGetSetDef Watcher_tp_getsets[] = {
-    {"callback", (getter)Watcher_callback_getter,
-     (setter)Watcher_callback_setter, NULL, NULL},
-    {"data", (getter)Watcher_data_getter,
-     (setter)Watcher_data_setter, NULL, NULL},
-    {"priority", (getter)Watcher_priority_getter,
-     (setter)Watcher_priority_setter, NULL, NULL},
-    {"loop", (getter)Watcher_loop_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
-    {"active", (getter)Watcher_active_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
-    {"pending", (getter)Watcher_pending_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
+    {
+        "callback", (getter)Watcher_callback_getter,
+        (setter)Watcher_callback_setter, NULL, NULL
+    },
+    {
+        "data", (getter)Watcher_data_getter,
+        (setter)Watcher_data_setter, NULL, NULL
+    },
+    {
+        "priority", (getter)Watcher_priority_getter,
+        (setter)Watcher_priority_setter, NULL, NULL
+    },
+    {
+        "loop", (getter)Watcher_loop_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
+    {
+        "active", (getter)Watcher_active_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
+    {
+        "pending", (getter)Watcher_pending_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
 };
 
 
@@ -623,7 +653,9 @@ Watcher_New(PyTypeObject *type, int ev_type, size_t size)
 
 
 int
-Watcher_Init(Watcher *self, Loop *loop, PyObject *callback, PyObject *data, int priority)
+Watcher_Init(
+    Watcher *self, Loop *loop, PyObject *callback, PyObject *data, int priority
+)
 {
     return __Watcher_Init(self, loop, callback, data, priority);
 }

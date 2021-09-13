@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2020 Malek Hadj-Ali
+# Copyright © 2021 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -46,7 +46,8 @@ _Py_INVOKE_VERIFY(PyObject *callback, const char *alt)
             }
             _PyErr_FormatFromCause(
                 PyExc_SystemError, "trying to invoke %V with an error set",
-                repr, alt ? alt : "a callback");
+                repr, alt ? alt : "a callback"
+            );
             Py_XDECREF(repr);
         }
         return -1;
@@ -87,9 +88,13 @@ event_loop(PyObject *module, PyObject *args, PyObject *kwargs)
         DefaultLoop = Loop_New(args, kwargs, 1);
     }
     else {
-        if (PyErr_WarnEx(PyExc_RuntimeWarning,
-                         "returning the 'default loop' created earlier, "
-                         "arguments ignored (if provided).", 1)) {
+        if (
+            PyErr_WarnEx(
+                PyExc_RuntimeWarning,
+                "returning the 'default loop' created earlier, "
+                "arguments ignored (if provided).", 1
+            )
+        ) {
             return NULL;
         }
         Py_INCREF(DefaultLoop);
@@ -105,8 +110,10 @@ event_fatal(PyObject *module, PyObject *args)
     _Py_IDENTIFIER(__err_fatal__);
     PyObject *obj;
 
-    if (!PyArg_ParseTuple(args, "O:fatal", &obj) ||
-        _PyObject_SetAttrId(obj, &PyId___err_fatal__, Py_True)) {
+    if (
+        !PyArg_ParseTuple(args, "O:fatal", &obj) ||
+        _PyObject_SetAttrId(obj, &PyId___err_fatal__, Py_True)
+    ) {
         return NULL;
     }
     return __Py_INCREF(obj);
@@ -131,10 +138,14 @@ event_sleep(PyObject *module, PyObject *args)
     if (!PyArg_ParseTuple(args, "d:sleep", &interval)) {
         return NULL;
     }
-    if (interval > day &&
-        PyErr_WarnEx(PyExc_RuntimeWarning,
-                     "'interval' bigger than a day (86400.0), "
-                     "this is not garanteed to work", 1)) {
+    if (
+        (interval > day) &&
+        PyErr_WarnEx(
+            PyExc_RuntimeWarning,
+            "'interval' bigger than a day (86400.0), "
+            "this is not garanteed to work", 1
+        )
+    ) {
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
@@ -197,25 +208,45 @@ event_feed_signal(PyObject *module, PyObject *args)
 
 /* event_def.m_methods */
 static PyMethodDef event_m_methods[] = {
-    {"loop", (PyCFunction)event_loop, METH_VARARGS | METH_KEYWORDS,
-     "loop([flags=EVFLAG_AUTO, callback=None, data=None, io_interval=0.0, timeout_interval=0.0]) -> 'default loop'"},
-    {"fatal", (PyCFunction)event_fatal, METH_VARARGS,
-     "fatal decorator"},
-    {"time", (PyCFunction)event_time, METH_NOARGS,
-     "time() -> float"},
-    {"sleep", (PyCFunction)event_sleep, METH_VARARGS,
-     "sleep(interval)"},
-    {"abi_version", (PyCFunction)event_abi_version, METH_NOARGS,
-     "abi_version() -> (int, int)"},
-    {"supported_backends", (PyCFunction)event_supported_backends, METH_NOARGS,
-     "supported_backends() -> int"},
-    {"recommended_backends", (PyCFunction)event_recommended_backends, METH_NOARGS,
-     "recommended_backends() -> int"},
-    {"embeddable_backends", (PyCFunction)event_embeddable_backends, METH_NOARGS,
-     "embeddable_backends() -> int"},
+    {
+        "loop", (PyCFunction)event_loop,
+        METH_VARARGS | METH_KEYWORDS,
+        "loop([flags=EVFLAG_AUTO, callback=None, data=None, io_interval=0.0, "
+        "timeout_interval=0.0]) -> 'default loop'"
+    },
+    {
+        "fatal", (PyCFunction)event_fatal,
+        METH_VARARGS, "fatal decorator"
+    },
+    {
+        "time", (PyCFunction)event_time,
+        METH_NOARGS, "time() -> float"
+    },
+    {
+        "sleep", (PyCFunction)event_sleep,
+        METH_VARARGS, "sleep(interval)"
+    },
+    {
+        "abi_version", (PyCFunction)event_abi_version,
+        METH_NOARGS, "abi_version() -> (int, int)"
+    },
+    {
+        "supported_backends", (PyCFunction)event_supported_backends,
+        METH_NOARGS, "supported_backends() -> int"
+    },
+    {
+        "recommended_backends", (PyCFunction)event_recommended_backends,
+        METH_NOARGS, "recommended_backends() -> int"
+    },
+    {
+        "embeddable_backends", (PyCFunction)event_embeddable_backends,
+        METH_NOARGS, "embeddable_backends() -> int"
+    },
 #if EV_SIGNAL_ENABLE
-    {"feed_signal", (PyCFunction)event_feed_signal, METH_VARARGS,
-     "feed_signal(signum)"},
+    {
+        "feed_signal", (PyCFunction)event_feed_signal,
+        METH_VARARGS, "feed_signal(signum)"
+    },
 #endif
     {NULL} /* Sentinel */
 };
@@ -368,7 +399,7 @@ _module_init(PyObject *module)
         // additional events
         _PyModule_AddIntMacro(module, EV_CUSTOM) ||
         _PyModule_AddIntMacro(module, EV_ERROR)
-       ) {
+    ) {
         return -1;
     }
     // setup libev

@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2020 Malek Hadj-Ali
+# Copyright © 2021 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -62,16 +62,22 @@ PyTypeObject Fork_Type = {
 Watcher *
 Fork_New(Loop *loop, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "callback", "data", "priority", NULL
+    };
 
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
     Watcher *self = NULL;
 
-    if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|Oi:fork", kwlist,
-            &callback, &data, &priority) &&
+    if (
+        PyArg_ParseTupleAndKeywords(
+            args, kwargs, "O|Oi:fork", kwlist,
+            &callback, &data, &priority
+        ) &&
         (self = __Fork_New(&Fork_Type)) &&
-        Watcher_Init(self, loop, callback, data, priority)) {
+        Watcher_Init(self, loop, callback, data, priority)
+    ) {
         Py_CLEAR(self);
     }
     return self;

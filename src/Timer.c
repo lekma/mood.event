@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2020 Malek Hadj-Ali
+# Copyright © 2021 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -57,17 +57,23 @@ Timer_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static int
 Timer_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"after", "repeat",
-                             "loop", "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "after", "repeat",
+        "loop", "callback", "data", "priority", NULL
+    };
 
     double after = 0.0, repeat = 0.0;
     Loop *loop = NULL;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddO!O|Oi:__init__", kwlist,
+    if (
+        !PyArg_ParseTupleAndKeywords(
+            args, kwargs, "ddO!O|Oi:__init__", kwlist,
             &after, &repeat,
-            &Loop_Type, &loop, &callback, &data, &priority)) {
+            &Loop_Type, &loop, &callback, &data, &priority
+        )
+    ) {
         return -1;
     }
     if (Watcher_Init(self, loop, callback, data, priority)) {
@@ -83,9 +89,11 @@ Timer_set(Watcher *self, PyObject *args)
 {
     double after = 0.0, repeat = 0.0;
 
-    if (Watcher_CannotSet(self) ||
+    if (
+        Watcher_CannotSet(self) ||
         !PyArg_ParseTuple(args, "dd:set", &after, &repeat) ||
-        __Timer_Set(self, after, repeat)) {
+        __Timer_Set(self, after, repeat)
+    ) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -103,10 +111,14 @@ Timer_reset(Watcher *self)
 
 /* Timer_Type.tp_methods */
 static PyMethodDef Timer_tp_methods[] = {
-    {"set", (PyCFunction)Timer_set, METH_VARARGS,
-     "set(after, repeat)"},
-    {"reset", (PyCFunction)Timer_reset, METH_NOARGS,
-     "reset()"},
+    {
+        "set", (PyCFunction)Timer_set,
+        METH_VARARGS, "set(after, repeat)"
+    },
+    {
+        "reset", (PyCFunction)Timer_reset,
+        METH_NOARGS, "reset()"
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -138,16 +150,21 @@ static PyObject *
 Timer_remaining_getter(Watcher *self, void *closure)
 {
     return PyFloat_FromDouble(
-        ev_timer_remaining(self->loop->loop, (ev_timer *)self->watcher));
+        ev_timer_remaining(self->loop->loop, (ev_timer *)self->watcher)
+    );
 }
 
 
 /* Timer_Type.tp_getsets */
 static PyGetSetDef Timer_tp_getsets[] = {
-    {"repeat", (getter)Timer_repeat_getter,
-     (setter)Timer_repeat_setter, NULL, NULL},
-    {"remaining", (getter)Timer_remaining_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
+    {
+        "repeat", (getter)Timer_repeat_getter,
+        (setter)Timer_repeat_setter, NULL, NULL
+    },
+    {
+        "remaining", (getter)Timer_remaining_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -170,20 +187,28 @@ PyTypeObject Timer_Type = {
 Watcher *
 Timer_New(Loop *loop, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"after", "repeat",
-                             "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "after", "repeat",
+        "callback", "data", "priority", NULL
+    };
 
     double after = 0.0, repeat = 0.0;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
     Watcher *self = NULL;
 
-    if (PyArg_ParseTupleAndKeywords(args, kwargs, "ddO|Oi:timer", kwlist,
+    if (
+        PyArg_ParseTupleAndKeywords(
+            args, kwargs, "ddO|Oi:timer", kwlist,
             &after, &repeat,
-            &callback, &data, &priority) &&
+            &callback, &data, &priority
+        ) &&
         (self = __Timer_New(&Timer_Type)) &&
-        (Watcher_Init(self, loop, callback, data, priority) ||
-         __Timer_Set(self, after, repeat))) {
+        (
+            Watcher_Init(self, loop, callback, data, priority) ||
+            __Timer_Set(self, after, repeat)
+        )
+    ) {
         Py_CLEAR(self);
     }
     return self;

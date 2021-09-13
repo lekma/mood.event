@@ -1,6 +1,6 @@
 /*
 #
-# Copyright © 2020 Malek Hadj-Ali
+# Copyright © 2021 Malek Hadj-Ali
 # All rights reserved.
 #
 # This file is part of mood.
@@ -74,8 +74,10 @@ Io_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static int
 Io_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"fd", "events",
-                             "loop", "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "fd", "events",
+        "loop", "callback", "data", "priority", NULL
+    };
 
     PyObject *fd = NULL;
     int events = 0;
@@ -83,9 +85,13 @@ Io_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OiO!O|Oi:__init__", kwlist,
+    if (
+        !PyArg_ParseTupleAndKeywords(
+            args, kwargs, "OiO!O|Oi:__init__", kwlist,
             &fd, &events,
-            &Loop_Type, &loop, &callback, &data, &priority)) {
+            &Loop_Type, &loop, &callback, &data, &priority
+        )
+    ) {
         return -1;
     }
     if (Watcher_Init(self, loop, callback, data, priority)) {
@@ -102,9 +108,11 @@ Io_set(Watcher *self, PyObject *args)
     PyObject *fd = NULL;
     int events = 0;
 
-    if (Watcher_CannotSet(self) ||
+    if (
+        Watcher_CannotSet(self) ||
         !PyArg_ParseTuple(args, "Oi:set", &fd, &events) ||
-        __Io_Set(self, fd, events)) {
+        __Io_Set(self, fd, events)
+    ) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -113,8 +121,10 @@ Io_set(Watcher *self, PyObject *args)
 
 /* Io_Type.tp_methods */
 static PyMethodDef Io_tp_methods[] = {
-    {"set", (PyCFunction)Io_set, METH_VARARGS,
-     "set(fd, events)"},
+    {
+        "set", (PyCFunction)Io_set,
+        METH_VARARGS, "set(fd, events)"
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -135,8 +145,10 @@ Io_events_setter(Watcher *self, PyObject *value, void *closure)
     if (Watcher_IsActive(self, "set the 'events' of an Io")) {
         return -1;
     }
-    if ((((events = _PyLong_AsInt(value)) == -1) && PyErr_Occurred()) ||
-        __Io_CheckEvents(events)) {
+    if (
+        (((events = _PyLong_AsInt(value)) == -1) && PyErr_Occurred()) ||
+        __Io_CheckEvents(events)
+    ) {
         return -1;
     }
     ev_io_modify((ev_io *)self->watcher, events);
@@ -154,10 +166,14 @@ Io_fd_getter(Watcher *self, void *closure)
 
 /* Io_Type.tp_getsets */
 static PyGetSetDef Io_tp_getsets[] = {
-    {"events", (getter)Io_events_getter,
-     (setter)Io_events_setter, NULL, NULL},
-    {"fd", (getter)Io_fd_getter,
-     _Py_READONLY_ATTRIBUTE, NULL, NULL},
+    {
+        "events", (getter)Io_events_getter,
+        (setter)Io_events_setter, NULL, NULL
+    },
+    {
+        "fd", (getter)Io_fd_getter,
+        _Py_READONLY_ATTRIBUTE, NULL, NULL
+    },
     {NULL}  /* Sentinel */
 };
 
@@ -180,8 +196,10 @@ PyTypeObject Io_Type = {
 Watcher *
 Io_New(Loop *loop, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"fd", "events",
-                             "callback", "data", "priority", NULL};
+    static char *kwlist[] = {
+        "fd", "events",
+        "callback", "data", "priority", NULL
+    };
 
     PyObject *fd = NULL;
     int events = 0;
@@ -189,12 +207,18 @@ Io_New(Loop *loop, PyObject *args, PyObject *kwargs)
     int priority = 0;
     Watcher *self = NULL;
 
-    if (PyArg_ParseTupleAndKeywords(args, kwargs, "OiO|Oi:io", kwlist,
+    if (
+        PyArg_ParseTupleAndKeywords(
+            args, kwargs, "OiO|Oi:io", kwlist,
             &fd, &events,
-            &callback, &data, &priority) &&
+            &callback, &data, &priority
+        ) &&
         (self = __Io_New(&Io_Type)) &&
-        (Watcher_Init(self, loop, callback, data, priority) ||
-         __Io_Set(self, fd, events))) {
+        (
+            Watcher_Init(self, loop, callback, data, priority) ||
+            __Io_Set(self, fd, events)
+        )
+    ) {
         Py_CLEAR(self);
     }
     return self;
