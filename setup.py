@@ -33,7 +33,7 @@ from sys import argv
 
 # pkg
 pkg_name = "mood.event"
-pkg_version = "1.5.1"
+pkg_version = "1.6.0"
 pkg_desc = "Python libev interface"
 
 PKG_VERSION = ("PKG_VERSION", "\"{0}\"".format(pkg_version))
@@ -85,7 +85,7 @@ setup(
     keywords="libev event",
 
     setup_requires = ["setuptools>=24.2.0"],
-    python_requires="~=3.8",
+    python_requires="~=3.10",
     packages=find_packages(),
     namespace_packages=["mood"],
     zip_safe=False,
@@ -122,7 +122,7 @@ setup(
         "Intended Audience :: System Administrators",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: POSIX",
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython"
     ]
 )

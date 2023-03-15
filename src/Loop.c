@@ -35,13 +35,14 @@ __Loop_FullStop(ev_loop *loop)
 static inline int
 __Loop_Fatal(PyObject *context)
 {
-    PyObject *exc_type, *exc_value, *exc_traceback;
+    PyObject *exc_type, *exc_value, *exc_traceback, *tmp;
     _Py_IDENTIFIER(__err_fatal__);
     int fatal = 0;
 
     PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
-    fatal = (_PyObject_HasAttrId(context, &PyId___err_fatal__) != 0);
+    fatal = (_PyObject_LookupAttrId(context, &PyId___err_fatal__, &tmp) != 0);
     _PyErr_ChainExceptions(exc_type, exc_value, exc_traceback);
+    Py_XDECREF(tmp);
     return fatal;
 }
 
