@@ -29,7 +29,7 @@
 
     One common way to use libev with threads is indeed to create one
     :py:class:`Loop` per thread, and use the *default loop* (from
-    :py:func:`default_loop`) in the "main" or "initial" thread.
+    :py:func:`loop`) in the "main" or "initial" thread.
 
     .. seealso::
 
