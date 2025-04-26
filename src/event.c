@@ -112,7 +112,7 @@ event_fatal(PyObject *module, PyObject *args)
 
     if (
         !PyArg_ParseTuple(args, "O:fatal", &obj) ||
-        _PyObject_SetAttrId(obj, &PyId___err_fatal__, Py_True)
+        _PyObject_SetAttrId(obj, &PyId___err_fatal__, Py_True) // incref Py_True??
     ) {
         return NULL;
     }
@@ -423,4 +423,3 @@ PyInit_event(void)
     }
     return module;
 }
-

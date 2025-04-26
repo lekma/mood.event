@@ -82,4 +82,3 @@
             whether it has been requested to make this watcher pending: there is
             a time window between the event loop checking and resetting the
             async notification, and the callback being invoked.
-

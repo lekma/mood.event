@@ -42,4 +42,3 @@
 
         * `Abusing an ev_idle watcher for its side-effect
           <http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Abusing_an_code_ev_idle_code_watcher>`_
-

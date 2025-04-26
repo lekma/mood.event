@@ -3,15 +3,15 @@
 :py:class:`Embed` --- Embed watcher
 ===================================
 
-.. py:class:: Embed(other, loop[, callback=None, data=None, priority=0])
-
-    :type other: :py:class:`Loop`
-    :param other: the loop to embed, this loop must be embeddable (i.e. its
-        backend must be in the set of :py:func:`embeddable_backends`).
+.. py:class:: Embed(loop, other[, callback=None, data=None, priority=0])
 
     :type loop: :py:class:`Loop`
     :param loop: loop object responsible for this watcher (accessible through
         :py:attr:`~Watcher.loop`).
+
+    :type other: :py:class:`Loop`
+    :param other: the loop to embed, this loop must be embeddable (i.e. its
+        backend must be in the set of :py:func:`embeddable_backends`).
 
     :type callback: callable or None
     :param callback: see :py:attr:`callback`.
@@ -100,4 +100,3 @@
         *Read only*
 
         The embedded event loop.
-

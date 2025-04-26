@@ -75,20 +75,22 @@ static int
 Child_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {
+        "loop",
         "pid", "trace",
-        "loop", "callback", "data", "priority", NULL
+        "callback", "data", "priority", NULL
     };
 
-    int pid = 0, trace = 0;
     Loop *loop = NULL;
+    int pid = 0, trace = 0;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
     if (
         !PyArg_ParseTupleAndKeywords(
-            args, kwargs, "ipO!O|Oi:__init__", kwlist,
+            args, kwargs, "O!ipO|Oi:__init__", kwlist,
+            &Loop_Type, &loop,
             &pid, &trace,
-            &Loop_Type, &loop, &callback, &data, &priority
+            &callback, &data, &priority
         )
     ) {
         return -1;
@@ -203,7 +205,7 @@ PyTypeObject Child_Type = {
     .tp_name = "mood.event.Child",
     .tp_basicsize = sizeof(Watcher),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_doc = "Child(pid, trace, loop, callback[, data=None, priority=0])",
+    .tp_doc = "Child(loop, pid, trace, callback[, data=None, priority=0])",
     .tp_methods = Child_tp_methods,
     .tp_getset = Child_tp_getsets,
     .tp_init = (initproc)Child_tp_init,
@@ -211,39 +213,4 @@ PyTypeObject Child_Type = {
 };
 
 
-/* interface ---------------------------------------------------------------- */
-
-Watcher *
-Child_New(Loop *loop, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {
-        "pid", "trace",
-        "callback", "data", "priority", NULL
-    };
-
-    int pid = 0, trace = 0;
-    PyObject *callback = NULL, *data = Py_None;
-    int priority = 0;
-    Watcher *self = NULL;
-
-    if (
-        !__Child_CheckLoop(loop) &&
-        PyArg_ParseTupleAndKeywords(
-            args, kwargs, "ipO|Oi:child", kwlist,
-            &pid, &trace,
-            &callback, &data, &priority
-        ) &&
-        (self = __Child_New(&Child_Type)) &&
-        (
-            Watcher_Init(self, loop, callback, data, priority) ||
-            __Child_Set(self, pid, trace)
-        )
-    ) {
-        Py_CLEAR(self);
-    }
-    return self;
-}
-
-
 #endif // !EV_CHILD_ENABLE
-

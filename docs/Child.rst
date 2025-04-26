@@ -3,7 +3,10 @@
 :py:class:`Child` --- Child watcher
 ===================================
 
-.. py:class:: Child(pid, trace, loop, callback[, data=None, priority=0])
+.. py:class:: Child(loop, pid, trace, callback[, data=None, priority=0])
+
+    :type loop: :py:class:`Loop`
+    :param loop: **must be** the *default loop*.
 
     :param int pid: wait for status changes of process *pid* (or any process
         if *pid* is specified as 0).
@@ -11,9 +14,6 @@
     :param bool trace: if ``False`` only activate the watcher when the
         process terminates, if ``True`` additionally activate the watcher
         when the process is stopped or continued.
-
-    :type loop: :py:class:`Loop`
-    :param loop: **must be** the *default loop*.
 
     :param callable callback: see :py:attr:`~Watcher.callback`.
 
@@ -78,4 +78,3 @@
     .. py:attribute:: rstatus
 
         The process exit status caused by :py:attr:`rpid`.
-

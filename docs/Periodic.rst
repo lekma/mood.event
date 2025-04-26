@@ -3,15 +3,15 @@
 :py:class:`Periodic` --- Periodic watcher
 =========================================
 
-.. py:class:: Periodic(offset, interval, loop, callback[, data=None, priority=0])
-
-    :param float offset: see :ref:`Periodic_modes`.
-
-    :param float interval: see :ref:`Periodic_modes`.
+.. py:class:: Periodic(loop, offset, interval, callback[, data=None, priority=0])
 
     :type loop: :py:class:`Loop`
     :param loop: loop object responsible for this watcher (accessible through
         :py:attr:`~Watcher.loop`).
+
+    :param float offset: see :ref:`Periodic_modes`.
+
+    :param float interval: see :ref:`Periodic_modes`.
 
     :param callable callback: see :py:attr:`~Watcher.callback`.
 
@@ -141,4 +141,3 @@ In this mode:
 Note also that there is an upper limit to how often a timer can fire (CPU speed
 for example), so if *interval* is very small then timing stability will of
 course deteriorate.
-

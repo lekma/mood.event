@@ -3,13 +3,13 @@
 :py:class:`Scheduler` --- Scheduler watcher
 ===========================================
 
-.. py:class:: Scheduler(reschedule, loop[, callback=None, data=None, priority=0])
-
-    :param callable reschedule: :py:attr:`reschedule` callback.
+.. py:class:: Scheduler(loop, reschedule, callback[, data=None, priority=0])
 
     :type loop: :py:class:`Loop`
     :param loop: loop object responsible for this watcher (accessible through
         :py:attr:`~Watcher.loop`).
+
+    :param callable reschedule: :py:attr:`reschedule` callback.
 
     :param callable callback: see :py:attr:`~Watcher.callback`.
 
@@ -28,7 +28,7 @@
             def myreschedule(watcher, now):
                 return now + 60.0
 
-            Scheduler(myreschedule, loop, callback)
+            Scheduler(loop, myreschedule, callback)
 
     This can be used to create very complex timers, such as a timer that
     triggers on "next midnight, local time". To do this, you would calculate the
@@ -88,4 +88,3 @@
 
         When active, this is the absolute time that the watcher is supposed to
         trigger next.
-

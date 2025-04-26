@@ -3,7 +3,11 @@
 :py:class:`Io` --- I/O watcher
 ==============================
 
-.. py:class:: Io(fd, events, loop, callback[, data=None, priority=0])
+.. py:class:: Io(loop, fd, events, callback[, data=None, priority=0])
+
+    :type loop: :py:class:`Loop`
+    :param loop: loop object responsible for this watcher (accessible through
+        :py:attr:`~Watcher.loop`).
 
     :type fd: int or object
     :param fd: the file descriptor to be monitored, can be an int or any
@@ -11,10 +15,6 @@
 
     :param int events: either :py:data:`EV_READ`, :py:data:`EV_WRITE` or
         :py:data:`EV_READ` | :py:data:`EV_WRITE`.
-
-    :type loop: :py:class:`Loop`
-    :param loop: loop object responsible for this watcher (accessible through
-        :py:attr:`~Watcher.loop`).
 
     :param callable callback: see :py:attr:`~Watcher.callback`.
 
@@ -94,4 +94,3 @@
     .. py:attribute:: events
 
         The events being watched.
-

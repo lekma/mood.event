@@ -101,19 +101,21 @@ static int
 Embed_tp_init(Embed *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {
+        "loop",
         "other",
-        "loop", "callback", "data", "priority", NULL
+        "callback", "data", "priority", NULL
     };
 
-    Loop *other = NULL, *loop = NULL;
+    Loop *loop = NULL, *other = NULL;
     PyObject *callback = Py_None, *data = Py_None;
     int priority = 0;
 
     if (
         !PyArg_ParseTupleAndKeywords(
             args, kwargs, "O!O!|OOi:__init__", kwlist,
+            &Loop_Type, &loop,
             &Loop_Type, &other,
-            &Loop_Type, &loop, &callback, &data, &priority
+            &callback, &data, &priority
         )
     ) {
         return -1;
@@ -221,7 +223,7 @@ PyTypeObject Embed_Type = {
     .tp_basicsize = sizeof(Embed),
     .tp_dealloc = (destructor)Embed_tp_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    .tp_doc = "Embed(other, loop[, callback=None, data=None, priority=0])",
+    .tp_doc = "Embed(loop, other[, callback=None, data=None, priority=0])",
     .tp_traverse = (traverseproc)Embed_tp_traverse,
     .tp_clear = (inquiry)Embed_tp_clear,
     .tp_methods = Embed_tp_methods,
@@ -231,38 +233,4 @@ PyTypeObject Embed_Type = {
 };
 
 
-/* interface ---------------------------------------------------------------- */
-
-Embed *
-Embed_New(Loop *loop, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {
-        "other",
-        "callback", "data", "priority", NULL
-    };
-
-    Loop *other = NULL;
-    PyObject *callback = Py_None, *data = Py_None;
-    int priority = 0;
-    Embed *self = NULL;
-
-    if (
-        PyArg_ParseTupleAndKeywords(
-            args, kwargs, "O!|OOi:embed", kwlist,
-            &Loop_Type, &other,
-            &callback, &data, &priority
-        ) &&
-        (self = __Embed_New(&Embed_Type)) &&
-        (
-            Watcher_Init((Watcher *)self, loop, callback, data, priority) ||
-            __Embed_Set(self, other)
-        )
-    ) {
-        Py_CLEAR(self);
-    }
-    return self;
-}
-
-
 #endif // !EV_EMBED_ENABLE
-

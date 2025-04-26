@@ -75,21 +75,23 @@ static int
 Io_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {
+        "loop",
         "fd", "events",
-        "loop", "callback", "data", "priority", NULL
+        "callback", "data", "priority", NULL
     };
 
+    Loop *loop = NULL;
     PyObject *fd = NULL;
     int events = 0;
-    Loop *loop = NULL;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
     if (
         !PyArg_ParseTupleAndKeywords(
-            args, kwargs, "OiO!O|Oi:__init__", kwlist,
+            args, kwargs, "O!OiO|Oi:__init__", kwlist,
+            &Loop_Type, &loop,
             &fd, &events,
-            &Loop_Type, &loop, &callback, &data, &priority
+            &callback, &data, &priority
         )
     ) {
         return -1;
@@ -183,44 +185,9 @@ PyTypeObject Io_Type = {
     .tp_name = "mood.event.Io",
     .tp_basicsize = sizeof(Watcher),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_doc = "Io(fd, events, loop, callback[, data=None, priority=0])",
+    .tp_doc = "Io(loop, fd, events, callback[, data=None, priority=0])",
     .tp_methods = Io_tp_methods,
     .tp_getset = Io_tp_getsets,
     .tp_init = (initproc)Io_tp_init,
     .tp_new = Io_tp_new,
 };
-
-
-/* interface ---------------------------------------------------------------- */
-
-Watcher *
-Io_New(Loop *loop, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {
-        "fd", "events",
-        "callback", "data", "priority", NULL
-    };
-
-    PyObject *fd = NULL;
-    int events = 0;
-    PyObject *callback = NULL, *data = Py_None;
-    int priority = 0;
-    Watcher *self = NULL;
-
-    if (
-        PyArg_ParseTupleAndKeywords(
-            args, kwargs, "OiO|Oi:io", kwlist,
-            &fd, &events,
-            &callback, &data, &priority
-        ) &&
-        (self = __Io_New(&Io_Type)) &&
-        (
-            Watcher_Init(self, loop, callback, data, priority) ||
-            __Io_Set(self, fd, events)
-        )
-    ) {
-        Py_CLEAR(self);
-    }
-    return self;
-}
-

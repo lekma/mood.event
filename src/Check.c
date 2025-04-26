@@ -57,32 +57,4 @@ PyTypeObject Check_Type = {
 };
 
 
-/* interface ---------------------------------------------------------------- */
-
-Watcher *
-Check_New(Loop *loop, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {
-        "callback", "data", "priority", NULL
-    };
-
-    PyObject *callback = NULL, *data = Py_None;
-    int priority = 0;
-    Watcher *self = NULL;
-
-    if (
-        PyArg_ParseTupleAndKeywords(
-            args, kwargs, "O|Oi:check", kwlist,
-            &callback, &data, &priority
-        ) &&
-        (self = __Check_New(&Check_Type)) &&
-        Watcher_Init(self, loop, callback, data, priority)
-    ) {
-        Py_CLEAR(self);
-    }
-    return self;
-}
-
-
 #endif // !EV_CHECK_ENABLE
-

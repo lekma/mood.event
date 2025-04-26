@@ -658,4 +658,3 @@ either no event watchers are active anymore or :py:meth:`~Loop.stop` was called.
 
     A *how* value of :py:data:`EVBREAK_ALL` will make all nested
     :py:meth:`~Loop.start` calls return.
-

@@ -33,7 +33,7 @@ from sys import argv
 
 # pkg
 pkg_name = "mood.event"
-pkg_version = "1.6.0"
+pkg_version = "2.0.0"
 pkg_desc = "Python libev interface"
 
 PKG_VERSION = ("PKG_VERSION", "\"{0}\"".format(pkg_version))

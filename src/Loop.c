@@ -210,6 +210,25 @@ __Loop_Dealloc(Loop *self)
 }
 
 
+static PyObject *
+__Loop_Watcher(Loop *self, PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *loop_args = NULL, *result = NULL;
+    Py_ssize_t args_size = PyTuple_GET_SIZE(args), i;
+
+    if ((loop_args = PyTuple_New(args_size + 1))) {
+        PyTuple_SET_ITEM(loop_args, 0, __Py_INCREF((PyObject *)self));
+        for (i = 0; i < args_size;) {
+            PyObject *item = PyTuple_GET_ITEM(args, i++);
+            PyTuple_SET_ITEM(loop_args, i, __Py_INCREF(item));
+        }
+        result = PyObject_Call((PyObject *)type, loop_args, kwargs);
+        Py_CLEAR(loop_args);
+    }
+    return result;
+}
+
+
 /* Loop_Type ---------------------------------------------------------------- */
 
 /* Loop_Type.tp_new */
@@ -368,6 +387,122 @@ Loop_verify(Loop *self)
 }
 
 
+/* watcher methods  */
+
+/* Loop.io() */
+static PyObject *
+Loop_io(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return __Loop_Watcher(self, &Io_Type, args, kwargs);
+}
+
+
+/* Loop.timer() */
+static PyObject *
+Loop_timer(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return __Loop_Watcher(self, &Timer_Type, args, kwargs);
+}
+
+
+#if EV_PERIODIC_ENABLE
+/* Loop.periodic() */
+static PyObject *
+Loop_periodic(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return __Loop_Watcher(self, &Periodic_Type, args, kwargs);
+}
+#if EV_PREPARE_ENABLE
+/* Loop.scheduler() */
+static PyObject *
+Loop_scheduler(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return __Loop_Watcher(self, &Scheduler_Type, args, kwargs);
+}
+#endif
+#endif
+
+
+#if EV_SIGNAL_ENABLE
+/* Loop.signal() */
+static PyObject *
+Loop_signal(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return __Loop_Watcher(self, &Signal_Type, args, kwargs);
+}
+#endif
+
+
+#if EV_CHILD_ENABLE
+/* Loop.child() */
+static PyObject *
+Loop_child(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return __Loop_Watcher(self, &Child_Type, args, kwargs);
+}
+#endif
+
+
+#if EV_IDLE_ENABLE
+/* Loop.idle() */
+static PyObject *
+Loop_idle(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return __Loop_Watcher(self, &Idle_Type, args, kwargs);
+}
+#endif
+
+
+#if EV_PREPARE_ENABLE
+/* Loop.prepare() */
+static PyObject *
+Loop_prepare(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return __Loop_Watcher(self, &Prepare_Type, args, kwargs);
+}
+#endif
+
+
+#if EV_CHECK_ENABLE
+/* Loop.check() */
+static PyObject *
+Loop_check(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return __Loop_Watcher(self, &Check_Type, args, kwargs);
+}
+#endif
+
+
+#if EV_EMBED_ENABLE
+/* Loop.embed() */
+static PyObject *
+Loop_embed(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return __Loop_Watcher(self, &Embed_Type, args, kwargs);
+}
+#endif
+
+
+#if EV_FORK_ENABLE
+/* Loop.fork() */
+static PyObject *
+Loop_fork(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return __Loop_Watcher(self, &Fork_Type, args, kwargs);
+}
+#endif
+
+
+#if EV_ASYNC_ENABLE
+/* Loop.async() */
+static PyObject *
+Loop_async(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return __Loop_Watcher(self, &Async_Type, args, kwargs);
+}
+#endif
+
+
 /* Loop_Type.tp_methods */
 static PyMethodDef Loop_tp_methods[] = {
     {
@@ -412,24 +547,24 @@ static PyMethodDef Loop_tp_methods[] = {
     },
     /* watcher methods */
     {
-        "io", (PyCFunction)Io_New,
+        "io", (PyCFunction)Loop_io,
         METH_VARARGS | METH_KEYWORDS,
         "io(fd, events, callback[, data=None, priority=0]) -> Io"
     },
     {
-        "timer", (PyCFunction)Timer_New,
+        "timer", (PyCFunction)Loop_timer,
         METH_VARARGS | METH_KEYWORDS,
         "timer(after, repeat, callback[, data=None, priority=0]) -> Timer"
     },
 #if EV_PERIODIC_ENABLE
     {
-        "periodic", (PyCFunction)Periodic_New,
+        "periodic", (PyCFunction)Loop_periodic,
         METH_VARARGS | METH_KEYWORDS,
         "periodic(offset, interval, callback[, data=None, priority=0]) -> Periodic"
     },
 #if EV_PREPARE_ENABLE
     {
-        "scheduler", (PyCFunction)Scheduler_New,
+        "scheduler", (PyCFunction)Loop_scheduler,
         METH_VARARGS | METH_KEYWORDS,
         "scheduler(reschedule, callback[, data=None, priority=0]) -> Scheduler"
     },
@@ -437,56 +572,56 @@ static PyMethodDef Loop_tp_methods[] = {
 #endif
 #if EV_SIGNAL_ENABLE
     {
-        "signal", (PyCFunction)Signal_New,
+        "signal", (PyCFunction)Loop_signal,
         METH_VARARGS | METH_KEYWORDS,
         "signal(signum, callback[, data=None, priority=0]) -> Signal"
     },
 #endif
 #if EV_CHILD_ENABLE
     {
-        "child", (PyCFunction)Child_New,
+        "child", (PyCFunction)Loop_child,
         METH_VARARGS | METH_KEYWORDS,
         "child(pid, trace, callback[, data=None, priority=0]) -> Child"
     },
 #endif
 #if EV_IDLE_ENABLE
     {
-        "idle", (PyCFunction)Idle_New,
+        "idle", (PyCFunction)Loop_idle,
         METH_VARARGS | METH_KEYWORDS,
         "idle(callback[, data=None, priority=0]) -> Idle"
     },
 #endif
 #if EV_PREPARE_ENABLE
     {
-        "prepare", (PyCFunction)Prepare_New,
+        "prepare", (PyCFunction)Loop_prepare,
         METH_VARARGS | METH_KEYWORDS,
         "prepare(callback[, data=None, priority=0]) -> Prepare"
     },
 #endif
 #if EV_CHECK_ENABLE
     {
-        "check", (PyCFunction)Check_New,
+        "check", (PyCFunction)Loop_check,
         METH_VARARGS | METH_KEYWORDS,
         "check(callback[, data=None, priority=0]) -> Check"
     },
 #endif
 #if EV_EMBED_ENABLE
     {
-        "embed", (PyCFunction)Embed_New,
+        "embed", (PyCFunction)Loop_embed,
         METH_VARARGS | METH_KEYWORDS,
         "embed(other[, callback=None, data=None, priority=0]) -> Embed"
     },
 #endif
 #if EV_FORK_ENABLE
     {
-        "fork", (PyCFunction)Fork_New,
+        "fork", (PyCFunction)Loop_fork,
         METH_VARARGS | METH_KEYWORDS,
         "fork(callback[, data=None, priority=0]) -> Fork"
     },
 #endif
 #if EV_ASYNC_ENABLE
     {
-        "async", (PyCFunction)Async_New,
+        "async", (PyCFunction)Loop_async,
         METH_VARARGS | METH_KEYWORDS,
         "async(callback[, data=None, priority=0]) -> Async"
     },
@@ -674,4 +809,3 @@ Loop_WarnOrStop(ev_loop *loop, PyObject *context)
 {
     __Loop_WarnOrStop(loop, context);
 }
-

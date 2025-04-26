@@ -58,20 +58,22 @@ static int
 Timer_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {
+        "loop",
         "after", "repeat",
-        "loop", "callback", "data", "priority", NULL
+        "callback", "data", "priority", NULL
     };
 
-    double after = 0.0, repeat = 0.0;
     Loop *loop = NULL;
+    double after = 0.0, repeat = 0.0;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
     if (
         !PyArg_ParseTupleAndKeywords(
-            args, kwargs, "ddO!O|Oi:__init__", kwlist,
+            args, kwargs, "O!ddO|Oi:__init__", kwlist,
+            &Loop_Type, &loop,
             &after, &repeat,
-            &Loop_Type, &loop, &callback, &data, &priority
+            &callback, &data, &priority
         )
     ) {
         return -1;
@@ -174,43 +176,9 @@ PyTypeObject Timer_Type = {
     .tp_name = "mood.event.Timer",
     .tp_basicsize = sizeof(Watcher),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_doc = "Timer(after, repeat, loop, callback[, data=None, priority=0])",
+    .tp_doc = "Timer(loop, after, repeat, callback[, data=None, priority=0])",
     .tp_methods = Timer_tp_methods,
     .tp_getset = Timer_tp_getsets,
     .tp_init = (initproc)Timer_tp_init,
     .tp_new = Timer_tp_new,
 };
-
-
-/* interface ---------------------------------------------------------------- */
-
-Watcher *
-Timer_New(Loop *loop, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {
-        "after", "repeat",
-        "callback", "data", "priority", NULL
-    };
-
-    double after = 0.0, repeat = 0.0;
-    PyObject *callback = NULL, *data = Py_None;
-    int priority = 0;
-    Watcher *self = NULL;
-
-    if (
-        PyArg_ParseTupleAndKeywords(
-            args, kwargs, "ddO|Oi:timer", kwlist,
-            &after, &repeat,
-            &callback, &data, &priority
-        ) &&
-        (self = __Timer_New(&Timer_Type)) &&
-        (
-            Watcher_Init(self, loop, callback, data, priority) ||
-            __Timer_Set(self, after, repeat)
-        )
-    ) {
-        Py_CLEAR(self);
-    }
-    return self;
-}
-

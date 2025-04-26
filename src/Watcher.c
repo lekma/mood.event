@@ -611,6 +611,7 @@ static PyGetSetDef Watcher_tp_getsets[] = {
         "pending", (getter)Watcher_pending_getter,
         _Py_READONLY_ATTRIBUTE, NULL, NULL
     },
+    {NULL}  /* Sentinel */
 };
 
 
@@ -702,4 +703,3 @@ Watcher_CannotSet(Watcher *self)
 {
     return Watcher_IsActive(self, "set a");
 }
-

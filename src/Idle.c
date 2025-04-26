@@ -57,32 +57,4 @@ PyTypeObject Idle_Type = {
 };
 
 
-/* interface ---------------------------------------------------------------- */
-
-Watcher *
-Idle_New(Loop *loop, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {
-        "callback", "data", "priority", NULL
-    };
-
-    PyObject *callback = NULL, *data = Py_None;
-    int priority = 0;
-    Watcher *self = NULL;
-
-    if (
-        PyArg_ParseTupleAndKeywords(
-            args, kwargs, "O|Oi:idle", kwlist,
-            &callback, &data, &priority
-        ) &&
-        (self = __Idle_New(&Idle_Type)) &&
-        Watcher_Init(self, loop, callback, data, priority)
-    ) {
-        Py_CLEAR(self);
-    }
-    return self;
-}
-
-
 #endif // !EV_IDLE_ENABLE
-

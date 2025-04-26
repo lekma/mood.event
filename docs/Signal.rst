@@ -3,13 +3,13 @@
 :py:class:`Signal` --- Signal watcher
 =====================================
 
-.. py:class:: Signal(signum, loop, callback[, data=None, priority=0])
-
-    :param int signum: the signal number to monitor.
+.. py:class:: Signal(loop, signum, callback[, data=None, priority=0])
 
     :type loop: :py:class:`Loop`
     :param loop: loop object responsible for this watcher (accessible through
         :py:attr:`~Watcher.loop`).
+
+    :param int signum: the signal number to monitor.
 
     :param callable callback: see :py:attr:`~Watcher.callback`.
 
@@ -61,4 +61,3 @@
         *Read only*
 
         The signal number being monitored.
-

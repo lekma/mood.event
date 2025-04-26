@@ -60,20 +60,22 @@ static int
 Signal_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {
+        "loop",
         "signum",
-        "loop", "callback", "data", "priority", NULL
+        "callback", "data", "priority", NULL
     };
 
-    int signum = 0;
     Loop *loop = NULL;
+    int signum = 0;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
     if (
         !PyArg_ParseTupleAndKeywords(
-            args, kwargs, "iO!O|Oi:__init__", kwlist,
+            args, kwargs, "O!iO|Oi:__init__", kwlist,
+            &Loop_Type, &loop,
             &signum,
-            &Loop_Type, &loop, &callback, &data, &priority
+            &callback, &data, &priority
         )
     ) {
         return -1;
@@ -135,7 +137,7 @@ PyTypeObject Signal_Type = {
     .tp_name = "mood.event.Signal",
     .tp_basicsize = sizeof(Watcher),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_doc = "Signal(signum, loop, callback[, data=None, priority=0])",
+    .tp_doc = "Signal(loop, signum, callback[, data=None, priority=0])",
     .tp_methods = Signal_tp_methods,
     .tp_getset = Signal_tp_getsets,
     .tp_init = (initproc)Signal_tp_init,
@@ -143,38 +145,4 @@ PyTypeObject Signal_Type = {
 };
 
 
-/* interface ---------------------------------------------------------------- */
-
-Watcher *
-Signal_New(Loop *loop, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {
-        "signum",
-        "callback", "data", "priority", NULL
-    };
-
-    int signum = 0;
-    PyObject *callback = NULL, *data = Py_None;
-    int priority = 0;
-    Watcher *self = NULL;
-
-    if (
-        PyArg_ParseTupleAndKeywords(
-            args, kwargs, "iO|Oi:signal", kwlist,
-            &signum,
-            &callback, &data, &priority
-        ) &&
-        (self = __Signal_New(&Signal_Type)) &&
-        (
-            Watcher_Init(self, loop, callback, data, priority) ||
-            __Signal_Set(self, signum)
-        )
-    ) {
-        Py_CLEAR(self);
-    }
-    return self;
-}
-
-
 #endif // !EV_SIGNAL_ENABLE
-

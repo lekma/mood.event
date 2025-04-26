@@ -368,4 +368,3 @@ Priorities
 .. py:data:: EV_MAXPRI
 
     default: ``2``.
-

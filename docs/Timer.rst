@@ -3,7 +3,11 @@
 :py:class:`Timer` --- Timer watcher
 ===================================
 
-.. py:class:: Timer(after, repeat, loop, callback[, data=None, priority=0])
+.. py:class:: Timer(loop, after, repeat, callback[, data=None, priority=0])
+
+    :type loop: :py:class:`Loop`
+    :param loop: loop object responsible for this watcher (accessible through
+        :py:attr:`~Watcher.loop`).
 
     :param float after: configure the timer to trigger after *after*
         seconds.
@@ -12,10 +16,6 @@
         be stopped once the timeout is reached. If it is positive, then the
         timer will automatically be configured to trigger again every
         *repeat* seconds later, again and again, until stopped manually.
-
-    :type loop: :py:class:`Loop`
-    :param loop: loop object responsible for this watcher (accessible through
-        :py:attr:`~Watcher.loop`).
 
     :param callable callback: see :py:attr:`~Watcher.callback`.
 
@@ -116,4 +116,3 @@
         :py:attr:`remaining` will be ``4.0``. When the timer expires and is
         restarted, it will be roughly ``7.0`` (likely slightly less as callback
         invocation takes some time, too), and so on.
-

@@ -86,20 +86,22 @@ static int
 Periodic_tp_init(Watcher *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {
+        "loop",
         "offset", "interval",
-        "loop", "callback", "data", "priority", NULL
+        "callback", "data", "priority", NULL
     };
 
-    double offset = 0.0, interval = 0.0;
     Loop *loop = NULL;
+    double offset = 0.0, interval = 0.0;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
     if (
         !PyArg_ParseTupleAndKeywords(
-            args, kwargs, "ddO!O|Oi:__init__", kwlist,
+            args, kwargs, "O!ddO|Oi:__init__", kwlist,
+            &Loop_Type, &loop,
             &offset, &interval,
-            &Loop_Type, &loop, &callback, &data, &priority
+            &callback, &data, &priority
         )
     ) {
         return -1;
@@ -233,45 +235,12 @@ PyTypeObject Periodic_Type = {
     .tp_name = "mood.event.Periodic",
     .tp_basicsize = sizeof(Watcher),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_doc = "Periodic(offset, interval, loop, callback[, data=None, priority=0])",
+    .tp_doc = "Periodic(loop, offset, interval, callback[, data=None, priority=0])",
     .tp_methods = Periodic_tp_methods,
     .tp_getset = Periodic_tp_getsets,
     .tp_init = (initproc)Periodic_tp_init,
     .tp_new = Periodic_tp_new,
 };
-
-
-/* interface ---------------------------------------------------------------- */
-
-Watcher *
-Periodic_New(Loop *loop, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {
-        "offset", "interval",
-        "callback", "data", "priority", NULL
-    };
-
-    double offset = 0.0, interval = 0.0;
-    PyObject *callback = NULL, *data = Py_None;
-    int priority = 0;
-    Watcher *self = NULL;
-
-    if (
-        PyArg_ParseTupleAndKeywords(
-            args, kwargs, "ddO|Oi:periodic", kwlist,
-            &offset, &interval,
-            &callback, &data, &priority
-        ) &&
-        (self = __Periodic_New(&Periodic_Type)) &&
-        (
-            Watcher_Init(self, loop, callback, data, priority) ||
-            __Periodic_Set(self, offset, interval)
-        )
-    ) {
-        Py_CLEAR(self);
-    }
-    return self;
-}
 
 
 #if EV_PREPARE_ENABLE
@@ -488,20 +457,22 @@ static int
 Scheduler_tp_init(Scheduler *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {
+        "loop",
         "reschedule",
-        "loop", "callback", "data", "priority", NULL
+        "callback", "data", "priority", NULL
     };
 
-    PyObject *reschedule = NULL;
     Loop *loop = NULL;
+    PyObject *reschedule = NULL;
     PyObject *callback = NULL, *data = Py_None;
     int priority = 0;
 
     if (
         !PyArg_ParseTupleAndKeywords(
-            args, kwargs, "OO!O|Oi:__init__", kwlist,
+            args, kwargs, "O!OO|Oi:__init__", kwlist,
+            &Loop_Type, &loop,
             &reschedule,
-            &Loop_Type, &loop, &callback, &data, &priority
+            &callback, &data, &priority
         )
     ) {
         return -1;
@@ -595,7 +566,7 @@ PyTypeObject Scheduler_Type = {
     .tp_basicsize = sizeof(Scheduler),
     .tp_dealloc = (destructor)Scheduler_tp_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,
-    .tp_doc = "Scheduler(reschedule, loop, callback[, data=None, priority=0])",
+    .tp_doc = "Scheduler(loop, reschedule, callback[, data=None, priority=0])",
     .tp_traverse = (traverseproc)Scheduler_tp_traverse,
     .tp_clear = (inquiry)Scheduler_tp_clear,
     .tp_methods = Scheduler_tp_methods,
@@ -606,41 +577,7 @@ PyTypeObject Scheduler_Type = {
 };
 
 
-/* interface ---------------------------------------------------------------- */
-
-Scheduler *
-Scheduler_New(Loop *loop, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {
-        "reschedule",
-        "callback", "data", "priority", NULL
-    };
-
-    PyObject *reschedule = NULL;
-    PyObject *callback = NULL, *data = Py_None;
-    int priority = 0;
-    Scheduler *self = NULL;
-
-    if (
-        PyArg_ParseTupleAndKeywords(
-            args, kwargs, "OO|Oi:scheduler", kwlist,
-            &reschedule,
-            &callback, &data, &priority
-        ) &&
-        (self = __Scheduler_New(&Scheduler_Type)) &&
-        (
-            Watcher_Init((Watcher *)self, loop, callback, data, priority) ||
-            __Scheduler_Set(self, reschedule)
-        )
-    ) {
-        Py_CLEAR(self);
-    }
-    return self;
-}
-
-
 #endif // !EV_PREPARE_ENABLE
 
 
 #endif // !EV_PERIODIC_ENABLE
-

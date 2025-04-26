@@ -125,14 +125,11 @@ int Watcher_CannotSet(Watcher *);
 /* watcher types */
 
 extern PyTypeObject Io_Type;
-Watcher *Io_New(Loop *, PyObject *, PyObject *);
 
 extern PyTypeObject Timer_Type;
-Watcher *Timer_New(Loop *, PyObject *, PyObject *);
 
 #if EV_PERIODIC_ENABLE
 extern PyTypeObject Periodic_Type;
-Watcher *Periodic_New(Loop *, PyObject *, PyObject *);
 #if EV_PREPARE_ENABLE
 typedef struct {
     Watcher watcher;
@@ -143,35 +140,28 @@ typedef struct {
     PyObject *err_traceback;
     int err_fatal;
 } Scheduler;
-
 extern PyTypeObject Scheduler_Type;
-Scheduler *Scheduler_New(Loop *, PyObject *, PyObject *);
 #endif
 #endif
 
 #if EV_SIGNAL_ENABLE
 extern PyTypeObject Signal_Type;
-Watcher *Signal_New(Loop *, PyObject *, PyObject *);
 #endif
 
 #if EV_CHILD_ENABLE
 extern PyTypeObject Child_Type;
-Watcher *Child_New(Loop *, PyObject *, PyObject *);
 #endif
 
 #if EV_IDLE_ENABLE
 extern PyTypeObject Idle_Type;
-Watcher *Idle_New(Loop *, PyObject *, PyObject *);
 #endif
 
 #if EV_PREPARE_ENABLE
 extern PyTypeObject Prepare_Type;
-Watcher *Prepare_New(Loop *, PyObject *, PyObject *);
 #endif
 
 #if EV_CHECK_ENABLE
 extern PyTypeObject Check_Type;
-Watcher *Check_New(Loop *, PyObject *, PyObject *);
 #endif
 
 #if EV_EMBED_ENABLE
@@ -179,19 +169,15 @@ typedef struct {
     Watcher watcher;
     Loop *other;
 } Embed;
-
 extern PyTypeObject Embed_Type;
-Embed *Embed_New(Loop *, PyObject *, PyObject *);
 #endif
 
 #if EV_FORK_ENABLE
 extern PyTypeObject Fork_Type;
-Watcher *Fork_New(Loop *, PyObject *, PyObject *);
 #endif
 
 #if EV_ASYNC_ENABLE
 extern PyTypeObject Async_Type;
-Watcher *Async_New(Loop *, PyObject *, PyObject *);
 #endif
 
 
@@ -201,4 +187,3 @@ Watcher *Async_New(Loop *, PyObject *, PyObject *);
 
 
 #endif // !Py_MOOD_EVENT_H
-
