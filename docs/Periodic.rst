@@ -107,7 +107,7 @@ Example, trigger an event on January 1st 2014 00:00:00 UTC:
 
     .. code-block:: python
 
-        Periodic(1388534400.0, 0.0, loop, callback)
+        Periodic(loop, 1388534400.0, 0.0, callback)
 
 In this mode:
 
@@ -125,7 +125,7 @@ the hour (with respect to UTC):
 
     .. code-block:: python
 
-        Periodic(0.0, 3600.0, loop, callback)
+        Periodic(loop, 0.0, 3600.0, callback)
 
 This doesn't mean there will always be 3600 seconds in between triggers, but
 only that the callback will be called when the system time shows a full hour

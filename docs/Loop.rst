@@ -310,8 +310,7 @@
 
 
     The following methods are implemented as a convenience, they allow you to
-    instantiate watchers directly attached to the loop (although they do not
-    take keyword arguments):
+    instantiate watchers directly attached to the loop:
 
     .. py:method:: io(fd, events, callback[, data=None, priority=0])
 
