@@ -342,7 +342,7 @@
         :rtype: :py:class:`Child`
 
 
-    .. py:method:: idle(callback[, data=None, priority=0])
+    .. py:method:: idle([callback=None, data=None, priority=0])
 
         :rtype: :py:class:`Idle`
 
@@ -367,7 +367,7 @@
         :rtype: :py:class:`Fork`
 
 
-    .. py:method:: async(callback[, data=None, priority=0])
+    .. py:method:: async_(callback[, data=None, priority=0])
 
         :rtype: :py:class:`Async`
 

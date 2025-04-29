@@ -494,9 +494,9 @@ Loop_fork(Loop *self, PyObject *args, PyObject *kwargs)
 
 
 #if EV_ASYNC_ENABLE
-/* Loop.async() */
+/* Loop.async_() */
 static PyObject *
-Loop_async(Loop *self, PyObject *args, PyObject *kwargs)
+Loop_async_(Loop *self, PyObject *args, PyObject *kwargs)
 {
     return __Loop_Watcher(self, &Async_Type, args, kwargs);
 }
@@ -588,7 +588,7 @@ static PyMethodDef Loop_tp_methods[] = {
     {
         "idle", (PyCFunction)Loop_idle,
         METH_VARARGS | METH_KEYWORDS,
-        "idle(callback[, data=None, priority=0]) -> Idle"
+        "idle([callback=None, data=None, priority=0]) -> Idle"
     },
 #endif
 #if EV_PREPARE_ENABLE
@@ -621,9 +621,9 @@ static PyMethodDef Loop_tp_methods[] = {
 #endif
 #if EV_ASYNC_ENABLE
     {
-        "async", (PyCFunction)Loop_async,
+        "async_", (PyCFunction)Loop_async_,
         METH_VARARGS | METH_KEYWORDS,
-        "async(callback[, data=None, priority=0]) -> Async"
+        "async_(callback[, data=None, priority=0]) -> Async"
     },
 #endif
     {NULL}  /* Sentinel */

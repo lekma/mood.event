@@ -3,13 +3,14 @@
 :py:class:`Idle` --- Idle watcher
 =================================
 
-.. py:class:: Idle(loop, callback[, data=None, priority=0])
+.. py:class:: Idle(loop[, callback=None, data=None, priority=0])
 
     :type loop: :py:class:`Loop`
     :param loop: loop object responsible for this watcher (accessible through
         :py:attr:`~Watcher.loop`).
 
-    :param callable callback: see :py:attr:`~Watcher.callback`.
+    :type callback: callable or None
+    :param callback: see :py:attr:`~Watcher.callback`.
 
     :param object data: any Python object you might want to attach to the
         watcher (stored in :py:attr:`~Watcher.data`).
