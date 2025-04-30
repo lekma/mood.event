@@ -243,7 +243,10 @@ __Watcher_Callback(ev_loop *loop, ev_watcher *watcher, int revents)
 
 /*#define __Watcher_CheckCallback(W, cb, r) \
     do { \
-        if ((W)->ev_type == EV_EMBED) { \
+        if ( \
+            ((W)->ev_type == EV_IDLE) || \
+            ((W)->ev_type == EV_EMBED) \
+        ) { \
             _Py_CHECK_CALLABLE_OR_NONE((cb), (r)); \
         } \
         else { \
