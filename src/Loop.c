@@ -120,7 +120,7 @@ __Loop_Alloc(PyTypeObject *type)
 
 
 static inline int
-__Loop_Setup(Loop *self, PyObject *args, PyObject *kwargs, int _default)
+__Loop_Setup(Loop *self, PyObject *args, PyObject *kwargs, int _default_)
 {
     static char *kwlist[] = {
         "flags", "callback", "data", "io_interval", "timeout_interval", NULL
@@ -137,7 +137,7 @@ __Loop_Setup(Loop *self, PyObject *args, PyObject *kwargs, int _default)
     ) {
         return -1;
     }
-    if (!(self->loop = _default ? ev_default_loop(flags) : ev_loop_new(flags))) {
+    if (!(self->loop = _default_ ? ev_default_loop(flags) : ev_loop_new(flags))) {
         PyErr_SetString(Error, "could not create loop, bad 'flags'?");
         return -1;
     }
@@ -155,13 +155,13 @@ __Loop_Setup(Loop *self, PyObject *args, PyObject *kwargs, int _default)
 
 
 static inline PyObject *
-__Loop_New(PyTypeObject *type, PyObject *args, PyObject *kwargs, int _default)
+__Loop_New(PyTypeObject *type, PyObject *args, PyObject *kwargs, int _default_)
 {
     Loop *self = NULL;
 
     if ((self = __Loop_Alloc(type))) {
         PyObject_GC_Track(self);
-        if (__Loop_Setup(self, args, kwargs, _default)) {
+        if (__Loop_Setup(self, args, kwargs, _default_)) {
             Py_CLEAR(self);
         }
     }
@@ -236,6 +236,13 @@ static PyObject *
 Loop_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     return __Loop_New(type, args, kwargs, 0);
+}
+
+/* Loop_Type.tp_init */
+static int
+Loop_tp_init(Loop *self, PyObject *args, PyObject *kwargs)
+{
+    return 0;
 }
 
 
@@ -387,6 +394,46 @@ Loop_verify(Loop *self)
 }
 
 
+/* Loop.feed_fd_event(fd, revents) */
+static PyObject *
+Loop_feed_fd_event(Loop *self, PyObject *args)
+{
+    PyObject *fd = NULL;
+    int revents = EV_NONE, fdnum = -1;
+
+    if (!PyArg_ParseTuple(args, "Oi:feed_fd_event", &fd, &revents)) {
+        return NULL;
+    }
+    if ((fdnum = PyObject_AsFileDescriptor(fd)) < 0) {
+        return NULL;
+    }
+    ev_feed_fd_event(self->loop, fdnum, revents);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+#if EV_SIGNAL_ENABLE
+/* Loop.feed_signal_event(signum) */
+static PyObject *
+Loop_feed_signal_event(Loop *self, PyObject *args)
+{
+    int signum;
+
+    if (!PyArg_ParseTuple(args, "i:feed_signal_event", &signum)) {
+        return NULL;
+    }
+    ev_feed_signal_event(self->loop, signum);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+#endif
+
+
 /* watcher methods  */
 
 /* Loop.io() */
@@ -412,6 +459,7 @@ Loop_periodic(Loop *self, PyObject *args, PyObject *kwargs)
 {
     return __Loop_Watcher(self, &Periodic_Type, args, kwargs);
 }
+
 #if EV_PREPARE_ENABLE
 /* Loop.scheduler() */
 static PyObject *
@@ -545,7 +593,19 @@ static PyMethodDef Loop_tp_methods[] = {
         "verify", (PyCFunction)Loop_verify,
         METH_NOARGS, "verify()"
     },
+    {
+        "feed_fd_event", (PyCFunction)Loop_feed_fd_event,
+        METH_VARARGS, "feed_fd_event(fd, revents)"
+    },
+#if EV_SIGNAL_ENABLE
+    {
+        "feed_signal_event", (PyCFunction)Loop_feed_signal_event,
+        METH_VARARGS, "feed_signal_event(signum)"
+    },
+#endif
+
     /* watcher methods */
+
     {
         "io", (PyCFunction)Loop_io,
         METH_VARARGS | METH_KEYWORDS,
@@ -556,6 +616,7 @@ static PyMethodDef Loop_tp_methods[] = {
         METH_VARARGS | METH_KEYWORDS,
         "timer(after, repeat, callback[, data=None, priority=0]) -> Timer"
     },
+
 #if EV_PERIODIC_ENABLE
     {
         "periodic", (PyCFunction)Loop_periodic,
@@ -570,6 +631,7 @@ static PyMethodDef Loop_tp_methods[] = {
     },
 #endif
 #endif
+
 #if EV_SIGNAL_ENABLE
     {
         "signal", (PyCFunction)Loop_signal,
@@ -577,6 +639,7 @@ static PyMethodDef Loop_tp_methods[] = {
         "signal(signum, callback[, data=None, priority=0]) -> Signal"
     },
 #endif
+
 #if EV_CHILD_ENABLE
     {
         "child", (PyCFunction)Loop_child,
@@ -584,6 +647,7 @@ static PyMethodDef Loop_tp_methods[] = {
         "child(pid, trace, callback[, data=None, priority=0]) -> Child"
     },
 #endif
+
 #if EV_IDLE_ENABLE
     {
         "idle", (PyCFunction)Loop_idle,
@@ -591,6 +655,7 @@ static PyMethodDef Loop_tp_methods[] = {
         "idle([callback=None, data=None, priority=0]) -> Idle"
     },
 #endif
+
 #if EV_PREPARE_ENABLE
     {
         "prepare", (PyCFunction)Loop_prepare,
@@ -598,6 +663,7 @@ static PyMethodDef Loop_tp_methods[] = {
         "prepare(callback[, data=None, priority=0]) -> Prepare"
     },
 #endif
+
 #if EV_CHECK_ENABLE
     {
         "check", (PyCFunction)Loop_check,
@@ -605,6 +671,7 @@ static PyMethodDef Loop_tp_methods[] = {
         "check(callback[, data=None, priority=0]) -> Check"
     },
 #endif
+
 #if EV_EMBED_ENABLE
     {
         "embed", (PyCFunction)Loop_embed,
@@ -612,6 +679,7 @@ static PyMethodDef Loop_tp_methods[] = {
         "embed(other[, callback=None, data=None, priority=0]) -> Embed"
     },
 #endif
+
 #if EV_FORK_ENABLE
     {
         "fork", (PyCFunction)Loop_fork,
@@ -619,6 +687,7 @@ static PyMethodDef Loop_tp_methods[] = {
         "fork(callback[, data=None, priority=0]) -> Fork"
     },
 #endif
+
 #if EV_ASYNC_ENABLE
     {
         "async_", (PyCFunction)Loop_async_,
@@ -626,6 +695,7 @@ static PyMethodDef Loop_tp_methods[] = {
         "async_(callback[, data=None, priority=0]) -> Async"
     },
 #endif
+
     {NULL}  /* Sentinel */
 };
 
@@ -777,12 +847,13 @@ PyTypeObject Loop_Type = {
     .tp_name = "mood.event.Loop",
     .tp_basicsize = sizeof(Loop),
     .tp_dealloc = (destructor)Loop_tp_dealloc,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,
     .tp_doc = "Loop([flags=EVFLAG_AUTO, callback=None, data=None, io_interval=0.0, timeout_interval=0.0])",
     .tp_traverse = (traverseproc)Loop_tp_traverse,
     .tp_clear = (inquiry)Loop_tp_clear,
     .tp_methods = Loop_tp_methods,
     .tp_getset = Loop_tp_getsets,
+    .tp_init = (initproc)Loop_tp_init,
     .tp_new = Loop_tp_new,
     .tp_finalize = (destructor)Loop_tp_finalize,
 };
@@ -791,9 +862,9 @@ PyTypeObject Loop_Type = {
 /* interface ---------------------------------------------------------------- */
 
 PyObject *
-Loop_New(PyObject *args, PyObject *kwargs, int _default)
+Loop_New(PyObject *args, PyObject *kwargs, int _default_)
 {
-    return __Loop_New(&Loop_Type, args, kwargs, _default);
+    return __Loop_New(&Loop_Type, args, kwargs, _default_);
 }
 
 

@@ -201,6 +201,9 @@ event_feed_signal(PyObject *module, PyObject *args)
         return NULL;
     }
     ev_feed_signal(signum);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 #endif
