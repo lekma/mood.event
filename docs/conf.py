@@ -170,4 +170,4 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'python': ('https://docs.python.org/3.8', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3.10', None)}

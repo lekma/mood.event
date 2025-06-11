@@ -1,31 +1,9 @@
-/*
-#
-# Copyright © 2021 Malek Hadj-Ali
-# All rights reserved.
-#
-# This file is part of mood.
-#
-# mood is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License version 3
-# as published by the Free Software Foundation.
-#
-# mood is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with mood.  If not, see <http://www.gnu.org/licenses/>.
-#
-*/
-
-
 #include "event.h"
 
 
 /* global objects */
 
-PyObject *Error = NULL;
+PyObject *EventError = NULL;
 PyObject *DefaultLoop = NULL;
 
 
@@ -116,7 +94,7 @@ event_fatal(PyObject *module, PyObject *args)
     ) {
         return NULL;
     }
-    return __Py_INCREF(obj);
+    return Py_NewRef(obj);
 }
 
 
@@ -259,7 +237,7 @@ static PyMethodDef event_m_methods[] = {
 static int
 event_m_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    Py_VISIT(Error);
+    Py_VISIT(EventError);
     return 0;
 }
 
@@ -268,7 +246,7 @@ event_m_traverse(PyObject *module, visitproc visit, void *arg)
 static int
 event_m_clear(PyObject *module)
 {
-    Py_CLEAR(Error);
+    Py_CLEAR(EventError);
     return 0;
 }
 
@@ -301,10 +279,12 @@ _module_init(PyObject *module)
 {
     if (
         PyModule_AddStringConstant(module, "__version__", PKG_VERSION) ||
-        _PyModule_AddNewException(module, "Error", "mood.event", NULL, NULL, &Error) ||
+        _PyModule_AddNewException(
+            module, "Error", "mood.event", NULL, NULL, &EventError
+        ) ||
 
         // Loop
-        _PyModule_AddType(module, "Loop", &Loop_Type) ||
+        PyModule_AddType(module, &Loop_Type) ||
         _PyModule_AddUnsignedIntMacro(module, EVFLAG_AUTO) ||
         _PyModule_AddUnsignedIntMacro(module, EVFLAG_NOENV) ||
         _PyModule_AddUnsignedIntMacro(module, EVFLAG_FORKCHECK) ||
@@ -332,70 +312,70 @@ _module_init(PyObject *module)
         _PyModule_AddIntMacro(module, EV_MAXPRI) ||
 
         // Io
-        _PyModule_AddTypeWithBase(module, "Io", &Io_Type, &Watcher_Type) ||
+        _PyModule_AddTypeWithBase(module, &Io_Type, &Watcher_Type) ||
         _PyModule_AddIntMacro(module, EV_READ) ||
         _PyModule_AddIntMacro(module, EV_WRITE) ||
         _PyModule_AddIntMacro(module, EV_IO) ||
 
         // Timer
-        _PyModule_AddTypeWithBase(module, "Timer", &Timer_Type, &Watcher_Type) ||
+        _PyModule_AddTypeWithBase(module, &Timer_Type, &Watcher_Type) ||
         _PyModule_AddIntMacro(module, EV_TIMER) ||
 
 #if EV_PERIODIC_ENABLE
         // Periodic
-        _PyModule_AddTypeWithBase(module, "Periodic", &Periodic_Type, &Watcher_Type) ||
+        _PyModule_AddTypeWithBase(module, &Periodic_Type, &Watcher_Type) ||
 #if EV_PREPARE_ENABLE
         // Scheduler
-        _PyModule_AddTypeWithBase(module, "Scheduler", &Scheduler_Type, &Watcher_Type) ||
+        _PyModule_AddTypeWithBase(module, &Scheduler_Type, &Watcher_Type) ||
 #endif
         _PyModule_AddIntMacro(module, EV_PERIODIC) ||
 #endif
 
 #if EV_SIGNAL_ENABLE
         // Signal
-        _PyModule_AddTypeWithBase(module, "Signal", &Signal_Type, &Watcher_Type) ||
+        _PyModule_AddTypeWithBase(module, &Signal_Type, &Watcher_Type) ||
         _PyModule_AddIntMacro(module, EV_SIGNAL) ||
 #endif
 
 #if EV_CHILD_ENABLE
         // Child
-        _PyModule_AddTypeWithBase(module, "Child", &Child_Type, &Watcher_Type) ||
+        _PyModule_AddTypeWithBase(module, &Child_Type, &Watcher_Type) ||
         _PyModule_AddIntMacro(module, EV_CHILD) ||
 #endif
 
 #if EV_IDLE_ENABLE
         // Idle
-        _PyModule_AddTypeWithBase(module, "Idle", &Idle_Type, &Watcher_Type) ||
+        _PyModule_AddTypeWithBase(module, &Idle_Type, &Watcher_Type) ||
         _PyModule_AddIntMacro(module, EV_IDLE) ||
 #endif
 
 #if EV_PREPARE_ENABLE
         // Prepare
-        _PyModule_AddTypeWithBase(module, "Prepare", &Prepare_Type, &Watcher_Type) ||
+        _PyModule_AddTypeWithBase(module, &Prepare_Type, &Watcher_Type) ||
         _PyModule_AddIntMacro(module, EV_PREPARE) ||
 #endif
 
 #if EV_CHECK_ENABLE
         // Check
-        _PyModule_AddTypeWithBase(module, "Check", &Check_Type, &Watcher_Type) ||
+        _PyModule_AddTypeWithBase(module, &Check_Type, &Watcher_Type) ||
         _PyModule_AddIntMacro(module, EV_CHECK) ||
 #endif
 
 #if EV_EMBED_ENABLE
         // Embed
-        _PyModule_AddTypeWithBase(module, "Embed", &Embed_Type, &Watcher_Type) ||
+        _PyModule_AddTypeWithBase(module, &Embed_Type, &Watcher_Type) ||
         _PyModule_AddIntMacro(module, EV_EMBED) ||
 #endif
 
 #if EV_FORK_ENABLE
         // Fork
-        _PyModule_AddTypeWithBase(module, "Fork", &Fork_Type, &Watcher_Type) ||
+        _PyModule_AddTypeWithBase(module, &Fork_Type, &Watcher_Type) ||
         _PyModule_AddIntMacro(module, EV_FORK) ||
 #endif
 
 #if EV_ASYNC_ENABLE
         // Async
-        _PyModule_AddTypeWithBase(module, "Async", &Async_Type, &Watcher_Type) ||
+        _PyModule_AddTypeWithBase(module, &Async_Type, &Watcher_Type) ||
         _PyModule_AddIntMacro(module, EV_ASYNC) ||
 #endif
 

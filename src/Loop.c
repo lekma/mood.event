@@ -1,25 +1,3 @@
-/*
-#
-# Copyright © 2021 Malek Hadj-Ali
-# All rights reserved.
-#
-# This file is part of mood.
-#
-# mood is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License version 3
-# as published by the Free Software Foundation.
-#
-# mood is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with mood.  If not, see <http://www.gnu.org/licenses/>.
-#
-*/
-
-
 #include "event.h"
 
 
@@ -138,7 +116,7 @@ __Loop_Setup(Loop *self, PyObject *args, PyObject *kwargs, int _default_)
         return -1;
     }
     if (!(self->loop = _default_ ? ev_default_loop(flags) : ev_loop_new(flags))) {
-        PyErr_SetString(Error, "could not create loop, bad 'flags'?");
+        PyErr_SetString(EventError, "could not create loop, bad 'flags'?");
         return -1;
     }
     _Py_CHECK_CALLABLE_OR_NONE(callback, -1);
@@ -217,10 +195,10 @@ __Loop_Watcher(Loop *self, PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t args_size = PyTuple_GET_SIZE(args), i;
 
     if ((loop_args = PyTuple_New(args_size + 1))) {
-        PyTuple_SET_ITEM(loop_args, 0, __Py_INCREF((PyObject *)self));
+        PyTuple_SET_ITEM(loop_args, 0, Py_NewRef(self));
         for (i = 0; i < args_size;) {
             PyObject *item = PyTuple_GET_ITEM(args, i++);
-            PyTuple_SET_ITEM(loop_args, i, __Py_INCREF(item));
+            PyTuple_SET_ITEM(loop_args, i, Py_NewRef(item));
         }
         result = PyObject_Call((PyObject *)type, loop_args, kwargs);
         Py_CLEAR(loop_args);
@@ -704,7 +682,7 @@ static PyMethodDef Loop_tp_methods[] = {
 static PyObject *
 Loop_callback_getter(Loop *self, void *closure)
 {
-    return __Py_INCREF(self->callback);
+    return Py_NewRef(self->callback);
 }
 
 static int
@@ -721,7 +699,7 @@ Loop_callback_setter(Loop *self, PyObject *value, void *closure)
 static PyObject *
 Loop_data_getter(Loop *self, void *closure)
 {
-    return __Py_INCREF(self->data);
+    return Py_NewRef(self->data);
 }
 
 static int

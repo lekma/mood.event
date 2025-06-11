@@ -1,25 +1,3 @@
-/*
-#
-# Copyright © 2021 Malek Hadj-Ali
-# All rights reserved.
-#
-# This file is part of mood.
-#
-# mood is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License version 3
-# as published by the Free Software Foundation.
-#
-# mood is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with mood.  If not, see <http://www.gnu.org/licenses/>.
-#
-*/
-
-
 #include "event.h"
 
 
@@ -312,7 +290,8 @@ __Scheduler_Reschedule(ev_periodic *periodic, double now)
     }
     if (result < now) {
         PyErr_Format(
-            Error, "%R must return a value >= to the 'now' argument",
+            EventError,
+            "%R must return a value >= to the 'now' argument",
             self->reschedule
         );
         goto fail;
@@ -535,7 +514,7 @@ static PyMethodDef Scheduler_tp_methods[] = {
 static PyObject *
 Scheduler_reschedule_getter(Scheduler *self, void *closure)
 {
-    return __Py_INCREF(self->reschedule);
+    return Py_NewRef(self->reschedule);
 }
 
 static int

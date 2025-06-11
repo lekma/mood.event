@@ -1,25 +1,3 @@
-/*
-#
-# Copyright © 2021 Malek Hadj-Ali
-# All rights reserved.
-#
-# This file is part of mood.
-#
-# mood is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License version 3
-# as published by the Free Software Foundation.
-#
-# mood is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with mood.  If not, see <http://www.gnu.org/licenses/>.
-#
-*/
-
-
 #include "event.h"
 
 
@@ -77,7 +55,7 @@ static inline int
 __Embed_Set(Embed *self, Loop *other)
 {
     if (!(ev_backend(other->loop) & ev_embeddable_backends())) {
-        PyErr_SetString(Error, "'other' must be embeddable");
+        PyErr_SetString(EventError, "'other' must be embeddable");
         return -1;
     }
     _Py_SET_MEMBER(self->other, other);
@@ -203,7 +181,7 @@ static PyMethodDef Embed_tp_methods[] = {
 static PyObject *
 Embed_other_getter(Embed *self, void *closure)
 {
-    return __Py_INCREF((PyObject *)self->other);
+    return Py_NewRef(self->other);
 }
 
 

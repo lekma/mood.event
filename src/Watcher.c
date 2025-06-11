@@ -1,25 +1,3 @@
-/*
-#
-# Copyright © 2021 Malek Hadj-Ali
-# All rights reserved.
-#
-# This file is part of mood.
-#
-# mood is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License version 3
-# as published by the Free Software Foundation.
-#
-# mood is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with mood.  If not, see <http://www.gnu.org/licenses/>.
-#
-*/
-
-
 #include "event.h"
 
 
@@ -179,7 +157,7 @@ ___Watcher_ExecCallback(ev_loop *loop, ev_watcher *watcher, int revents)
                 _PyErr_SetFromErrno();
             }
             else {
-                PyErr_SetString(Error, "unspecified libev error");
+                PyErr_SetString(EventError, "unspecified libev error");
             }
         }
         // warn that we have been stopped
@@ -226,7 +204,7 @@ __Watcher_Callback(ev_loop *loop, ev_watcher *watcher, int revents)
 #define __Watcher_CheckState(s, W, a, r) \
     do { \
         if (ev_is_##s((W)->watcher)) { \
-            PyErr_Format(Error, "cannot %s watcher while it is " #s, (a)); \
+            PyErr_Format(EventError, "cannot %s watcher while it is " #s, (a)); \
             return (r); \
         } \
     } while (0)
@@ -527,7 +505,7 @@ static PyMethodDef Watcher_tp_methods[] = {
 static PyObject *
 Watcher_callback_getter(Watcher *self, void *closure)
 {
-    return __Py_INCREF(self->callback);
+    return Py_NewRef(self->callback);
 }
 
 static int
@@ -544,7 +522,7 @@ Watcher_callback_setter(Watcher *self, PyObject *value, void *closure)
 static PyObject *
 Watcher_data_getter(Watcher *self, void *closure)
 {
-    return __Py_INCREF(self->data);
+    return Py_NewRef(self->data);
 }
 
 static int
@@ -582,7 +560,7 @@ Watcher_priority_setter(Watcher *self, PyObject *value, void *closure)
 static PyObject *
 Watcher_loop_getter(Watcher *self, void *closure)
 {
-    return __Py_INCREF((PyObject *)self->loop);
+    return Py_NewRef(self->loop);
 }
 
 
